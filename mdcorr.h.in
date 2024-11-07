@@ -1,0 +1,3 @@
+// the configured options and settings for Tutorial
+#define mdcorr_VERSION_MAJOR @mdcorr_VERSION_MAJOR@
+#define mdcorr_VERSION_MINOR @mdcorr_VERSION_MINOR@
