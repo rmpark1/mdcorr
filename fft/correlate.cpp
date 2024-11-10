@@ -1,3 +1,5 @@
+#include "correlate.h"
+
 #include <cmath>
 // #include <fftw3.h>
 

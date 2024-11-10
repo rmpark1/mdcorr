@@ -1,7 +1,7 @@
-file(GLOB sources *.cpp *.h)
-add_library(parse ${sources})
+file(GLOB sources *.cpp)
+add_library(array ${sources})
 
-target_include_directories(parse INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(array INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # should we use our own math functions
 # option(USE_MYMATH "Use tutorial provided math implementation" ON)

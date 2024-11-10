@@ -1,7 +1,7 @@
 # g++  -lfftw3 -lm main.cpp && ./a.out
 
 
-if false; then
+if true; then
     rm -r build/*
     cd build
     cmake ..
@@ -10,8 +10,9 @@ if false; then
 
 fi 
 
-# ./build/mdcorr
+echo "\nSTART PROGRAM\n***************\n"
+./build/mdcorr
 
-g++ -std=c++20 temp.cpp
+# g++ -std=c++20 temp.cpp && ./a.out
 
 

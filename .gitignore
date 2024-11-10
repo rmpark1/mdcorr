@@ -2,3 +2,8 @@
 *CMake*.bin
 build
 build.sh
+a.out
+data/
+main.py
+show.sh
+snips.cpp
