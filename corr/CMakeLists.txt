@@ -1,7 +1,7 @@
 file(GLOB sources *.cpp)
-add_library(fft ${sources})
+add_library(corr ${sources})
 
-target_include_directories(fft INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(corr INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # should we use our own math functions
 # option(USE_MYMATH "Use tutorial provided math implementation" ON)
@@ -13,4 +13,4 @@ target_include_directories(fft INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 #   # TODO 6: Link SqrtLibrary to tutorial_compiler_flags
 #   target_link_libraries(SqrtLibrary PUBLIC tutorial_compiler_flags)
 # endif()
-target_link_libraries(fft PUBLIC compiler_flags)
+target_link_libraries(corr PUBLIC compiler_flags)

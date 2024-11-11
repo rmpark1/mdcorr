@@ -14,18 +14,26 @@ target_compile_features(compiler_flags INTERFACE cxx_std_20)
 configure_file(mdcorr.h.in mdcorr.h)
 
 add_subdirectory(array)
-add_subdirectory(fft)
+add_subdirectory(corr)
 add_subdirectory(parse)
 
 # add the executable
 add_executable(mdcorr mdcorr.cpp)
 
 target_link_libraries(parse PUBLIC array compiler_flags)
+target_link_libraries(corr PUBLIC array compiler_flags)
 
-target_link_libraries(mdcorr PUBLIC fft parse compiler_flags)
+target_link_libraries(mdcorr PUBLIC corr parse compiler_flags)
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
 target_include_directories(mdcorr PUBLIC "${PROJECT_BINARY_DIR}")
 
-add_library(corr SHARED mdcorr.cpp)
-target_link_libraries(corr PUBLIC fft parse)
+add_library(corr_sh SHARED mdcorr.cpp)
+target_link_libraries(corr_sh PUBLIC corr parse compiler_flags)
+
+# TESTING
+if (BUILD_TESTING)
+    add_executable(test_array tests/test_array.cpp)
+    target_link_libraries(test_array corr_sh)
+    add_test(test_array test_array)
+endif()

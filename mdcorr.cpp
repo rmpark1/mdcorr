@@ -2,39 +2,31 @@
 
 #include "parse.h"
 #include "array.h"
+#include "correlate.h"
 
 // For now, tests in main.
 void test_lammps_reader() {
-
-    parse::LammpsReader reader("data", "data/lammps.in");
-
-    array::Arr2<double> a1(3, 5);
-    a1(2, 5) = 234.234;
-
-    std::fstream short_data("data/short.dat");
-    std::fstream vel("data/velocities.dat");
-
-    // vel << short_data;
+    parse::LammpsReader data("data/lammps.in");
 }
 
-extern "C" const char *hello(int a) {
-    return "Hello";
+
+void corr_lammps(str infile) {
+
+    parse::LammpsReader data("data/lammps.in");
+
+    // Load all data.
+    A3 velocities(data.nsteps, data.natoms, 3);
+    data.load(velocities);
+
+    A3 correlations(data.nsteps, data.natoms, 3);
+    corr::autocorrelate(velocities, correlations);
 }
 
-extern "C" const char *foo(const char* dir, float a, float b, float c, float d )
-{
-    printf("%s\n", dir);
-    printf("%f\n", a);
-    printf("%f\n", b);
-    printf("%f\n", c);
-    printf("%f\n", d);
-
-    return "hello\n";
-}
 
 int main(int argc, char *argv[]) {
 
-    test_lammps_reader();
+    // test_lammps_reader();
+    corr_lammps("data/lammps.in");
 
     return 0;
 }

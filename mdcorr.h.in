@@ -1,3 +1,12 @@
 // the configured options and settings for Tutorial
 #define mdcorr_VERSION_MAJOR @mdcorr_VERSION_MAJOR@
 #define mdcorr_VERSION_MINOR @mdcorr_VERSION_MINOR@
+
+#if PARALLEL
+#include <execution>
+#define SEQ std::execution::seq,
+#define PAR std::execution::par,
+#else
+#define SEQ
+#define PAR
+#endif

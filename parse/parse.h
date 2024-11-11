@@ -1,66 +1,57 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <cstdlib>
 #include <cstdio>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
-#include <string_view>
-
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <dirent.h>
+#include <vector>
 
 #include "array.h"
 
 typedef std::string str;
+typedef std::chrono::high_resolution_clock hr_clock;
+typedef array::Arr3<double> A3;
 
 #define verbose 1
+#define NRUNS 2 // NVT, then NVE
 
 namespace parse {
 
+/**
+ * Lammps Reader that will extract data by inference from the input file.
+ * All data output must be relative to the input file.
+ */
 class LammpsReader {
-  private:
-
-    // Per file
-    std::vector<str> paths;
-    std::stringstream data_stream;
-
-    // Data dimensions
-    int nsteps;
-    std::vector<int> steps;
-
-    // Data
-    int *ids;
-    int *time_steps;
-    double *positions;
-    double *velocities;
 
   public:
-    LammpsReader(str directory, str lammps_out, str suffix=str(".dat"));
-    LammpsReader(str directory, int nsteps, str suffix=str(".dat"));
+    str directory;
+    // Per file
+    std::vector<str> paths;
+
+    // Data dimensions
+    int nspecies;
+    int natoms;
+    int nsteps;
+    int nloaded;
+
+    LammpsReader(str infile);
     ~LammpsReader();
 
-    void find_dump_files(str directory, str suffix);
-
-    // Add a dump file manually
-    int add_file(str fname);
-
-    // Infer nsteps from main output.
-    int get_nsteps(str fname);
-
     // Load all the data, careful for large files.
-    int load();
+    int load(A3 &velocities);
     // Load subset of the data
-    int load_range(int start, int stop);
+    int load_range(array::Arr3<int> bounds);
 
     void read(double **);
 
     int check_dimensions();
 };
+
+
+std::vector<str> split(str s, str delimiter=str(" "));
+std::vector<str> search_file(str fname, str match, int skip=0, str delimiter=str(" "));
 
 }
