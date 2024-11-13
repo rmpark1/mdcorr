@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
     parse::LammpsReader data(cli.input, cli.directory, cli.skip, cli.stride, cli.verbose);
 
     int nsteps = data.nsteps / cli.stride;
-
     // Load all data.
     A3 velocities(nsteps, data.natoms, 3);
     data.load(velocities);

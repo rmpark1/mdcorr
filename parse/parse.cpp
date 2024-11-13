@@ -55,6 +55,7 @@ LammpsReader::LammpsReader(
         printf("LAMMPS dump stride: %i\n", dump_stride);
         printf("# of correlation points: %i\n", nsteps/stride);
         printf("----------------\n");
+        fflush(stdout);
     }
 }
 
@@ -67,6 +68,7 @@ int LammpsReader::load(A3 &velocities) {
     int id;
     str line;
     int nsteps_found = 0;
+    int tstep;
 
     // Open all file streams
     for (auto &fname : paths) {
@@ -81,23 +83,17 @@ int LammpsReader::load(A3 &velocities) {
 
             for (int i=0; i< natoms; i++) {
                 file_handle >> id >> vx >> vy >> vz;
-                if (i % stride == 0) {
-                    velocities(nsteps_found, id-1, 0) = vx;
-                    velocities(nsteps_found, id-1, 1) = vy;
-                    velocities(nsteps_found, id-1, 2) = vz;
+                tstep = nsteps_found/stride;
+                if (nsteps_found % stride == 0) {
+                    velocities(tstep, id-1, 0) = vx;
+                    velocities(tstep, id-1, 1) = vy;
+                    velocities(tstep, id-1, 2) = vz;
                 }
             }
             nsteps_found++;
 
             std::getline(file_handle, line);
             std::getline(file_handle, line);
-
-            // if (verbose) {
-            //     printf("Found step %d/%d", nsteps_found, nsteps);
-            //     if (!file_handle.eof()) { std::cout << "\r"; }
-            //     else { std::cout << "\n"; }
-            //     fflush(stdout);
-            // }
 
             if (nsteps_found >= nsteps) break;
         }

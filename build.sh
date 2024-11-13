@@ -1,9 +1,9 @@
 compile=true
-build_dev=false
-test=false
+build_dev=true
+test=true
 
 if ${compile}; then
-    rm -r build/*
+    mkdir -p build
     cd build
 
     if ${build_dev}; then
