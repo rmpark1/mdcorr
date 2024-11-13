@@ -1,12 +1,8 @@
-#include <cmath>
-
 #include "parse.h"
 #include "array.h"
 #include "correlate.h"
 
-#include "c_api.cpp"
-
-int main(int argc, char *argv[]) {
+extern "C" void autocorr(double *Z, int argc, char *argv[]) {
 
     // Parse user input
     parse::CLIReader cli(argc, argv);
@@ -30,6 +26,4 @@ int main(int argc, char *argv[]) {
 
     // Write file
     data.write_array(Z_sum);
-
-    return 0;
 }

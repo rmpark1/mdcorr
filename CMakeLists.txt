@@ -9,6 +9,8 @@ add_library(compiler_flags INTERFACE)
 # * Add compiler feature cxx_std_11 to tutorial_compiler_flags
 target_compile_features(compiler_flags INTERFACE cxx_std_20)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file(mdcorr.h.in mdcorr.h)
@@ -33,7 +35,21 @@ target_link_libraries(corr_sh PUBLIC corr parse compiler_flags)
 
 # TESTING
 if (BUILD_TESTING)
-    add_executable(test_array tests/test_array.cpp)
-    target_link_libraries(test_array corr_sh)
-    add_test(test_array test_array)
+
+    enable_testing()
+
+    set(TEST_FILES
+        test_array_iter
+        test_array_mem
+        test_array
+        test_cli
+        test_utils
+        test_correlate
+    )
+
+    foreach(TFI ${TEST_FILES})
+        add_executable(${TFI} tests/${TFI}.cpp)
+        target_link_libraries(${TFI} corr_sh)
+        add_test(${TFI} ${TFI})
+    endforeach()
 endif()
