@@ -22,6 +22,15 @@ namespace parse {
  * Lammps Reader that will extract data by inference from the input file.
  * All data output must be relative to the input file.
  */
+
+struct Input {
+    str directory;
+    str input;
+    int skip;
+    int stride;
+    bool verbose;
+};
+
 class LammpsReader {
 
   public:
@@ -39,7 +48,7 @@ class LammpsReader {
     int nsteps;
     int nloaded;
 
-    LammpsReader(str infile, str directory_, int skip, int stride, bool verbose);
+    LammpsReader(Input args);
 
     // Load all the data, careful for large files.
     int load(A3 &velocities);
@@ -53,14 +62,11 @@ class LammpsReader {
     int check_dimensions();
 };
 
+
 class CLIReader {
     
   public:
-    str directory;
-    str input;
-    int skip;
-    int stride;
-    bool verbose;
+    Input args;
 
     CLIReader(int argc, char *argv[]);
     void read_args(int argc, char *argv[]);

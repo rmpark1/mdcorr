@@ -10,9 +10,9 @@ int main(int argc, char *argv[]) {
 
     // Parse user input
     parse::CLIReader cli(argc, argv);
-    parse::LammpsReader data(cli.input, cli.directory, cli.skip, cli.stride, cli.verbose);
+    parse::LammpsReader data(cli.args);
 
-    int nsteps = data.nsteps / cli.stride;
+    int nsteps = data.nsteps / cli.args.stride;
     // Load all data.
     A3 velocities(nsteps, data.natoms, 3);
     data.load(velocities);

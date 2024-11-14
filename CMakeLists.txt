@@ -45,6 +45,7 @@ if (BUILD_TESTING)
         test_cli
         test_utils
         test_correlate
+        test_valid_file
     )
 
     foreach(TFI ${TEST_FILES})

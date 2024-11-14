@@ -14,19 +14,25 @@ namespace parse {
  *
  * @param infile the LAMMPS input file.
  */
-LammpsReader::LammpsReader(
-        str infile, str directory_, int skip, int stride, bool verbose) :
-        verbose(verbose), skip(skip), stride(stride), directory(directory_) {
+LammpsReader::LammpsReader(Input args) :
+        verbose(args.verbose),
+        skip(args.skip),
+        stride(args.stride),
+        directory(args.directory) {
 
-    if (directory.empty()) directory = get_parent(infile);
+    if (directory.empty()) directory = get_parent(args.input);
 
     // Infer nsteps from output file
     std::vector<str> tokens;
 
-    tokens = search_file(infile, "run", NRUNS-1);
+    tokens = search_file(args.input, "run", NRUNS-1);
+
+    if (tokens.size() < 1) {
+        throw std::invalid_argument(str("ERROR: File not found -- %s")+args.input);
+    }
     int n_sim_steps = std::stoi(tokens[1]);
 
-    tokens = search_file(infile, "dump");
+    tokens = search_file(args.input, "dump");
     int dump_stride = std::stoi(tokens[4]);
     str dump_path = tokens[5];
     paths.push_back(dump_path);
@@ -35,7 +41,7 @@ LammpsReader::LammpsReader(
     nspecies = 0;
     natoms = 0;
     while (true) {
-        tokens = search_file(infile, "create_atoms", nspecies);
+        tokens = search_file(args.input, "create_atoms", nspecies);
         if (tokens.size() == 0) break;
         nspecies++;
         natoms += std::stoi(tokens[3]);
@@ -75,6 +81,7 @@ int LammpsReader::load(A3 &velocities) {
 
         std::fstream file_handle(directory+os_sep+fname);
         if(verbose) std::cout << "reading " << fname << "\n";
+        fflush(stdout);
         std::getline(file_handle, line);
 
         while (!file_handle.eof()) {
@@ -91,6 +98,10 @@ int LammpsReader::load(A3 &velocities) {
                 }
             }
             nsteps_found++;
+
+            if (verbose) {
+                // Print every 10% of the way there
+            }
 
             std::getline(file_handle, line);
             std::getline(file_handle, line);
@@ -126,11 +137,11 @@ void LammpsReader::write_array(A3 &arr, str fname) {
 CLIReader::CLIReader(int argc, char *argv[]) {
 
     // Default settings
-    directory = "";
-    input = "";
-    skip = 1;
-    stride = 1;
-    verbose = 0;
+    args.directory = "";
+    args.input = "";
+    args.skip = 1;
+    args.stride = 1;
+    args.verbose = 0;
 
     read_args(argc, argv);
     check_input();
@@ -147,23 +158,26 @@ void CLIReader::read_args(int argc, char *argv[]) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
         if (match("--verbose", "-v")) {
-            verbose = 1;
+            args.verbose = 1;
             remaining -= 1;
             continue;
         }
 
         arg_val = str(argv[argc-remaining+1]);
-        if (match("--input", "-i")) { input = str(arg_val); remaining -= 2; }
-        if (match("--directory", "-d")) { directory = str(arg_val); remaining -= 2; }
-        if (match("--skip", "-s")) { skip = std::stoi(arg_val); remaining -= 2; }
-        if (match("--stride", "-j")) { stride = std::stoi(arg_val); remaining -= 2; }
+        if (match("--input", "-i")) { args.input = str(arg_val); remaining -= 2; }
+        if (match("--directory", "-d")) { args.directory = str(arg_val); remaining -= 2; }
+        if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
+        if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
+        if (match("--stride", "-j")) {
+            std::cout << "READING STRIDE>>" << args.stride << "\n";
+        }
     }
 }
 
 void CLIReader::check_input() {
 
     bool invalid = false;
-    if (input.empty()) {
+    if (args.input.empty()) {
             printf("Missing input file argument: '--input <lammps_input>'\n");
             invalid = true;
     }
@@ -204,6 +218,8 @@ std::vector<str> split(str s, str delimiter) {
 std::vector<str> search_file(str fname, str match, int skip, str delimiter) {
 
     std::fstream instream(fname);
+    if (instream.fail()) return std::vector<str>();
+
     str line;
     std::getline(instream, line);
 

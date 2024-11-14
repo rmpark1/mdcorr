@@ -1,8 +1,11 @@
 compile=true
 build_dev=true
 test=true
+rebuild=false
 
 if ${compile}; then
+    if ${rebuild}; then rm -r build; fi
+
     mkdir -p build
     cd build
 

@@ -1,7 +1,7 @@
 #include "parse.h"
 
 int main() {
-    int status = 0;
+    int s = 0;
 
     int argc = 3;
     char *argv[] = {
@@ -11,10 +11,12 @@ int main() {
         NULL
     };
 
-    parse::CLIReader input(argc, argv);
+    parse::CLIReader cli(argc, argv);
 
-    if (!input.directory.empty()) return 1;
-    if (input.input != "hello") return 2;
+    parse::Input input = cli.args;
+
+    if (!input.directory.empty()) s=1;
+    if (input.input != "hello") s=2;
 
     argc = 10;
     char *argv2[] = {
@@ -31,15 +33,20 @@ int main() {
         NULL
     };
 
-    parse::CLIReader input2(argc, (char **)argv2);
+    parse::CLIReader cli2(argc, (char **)argv2);
 
-    if (input2.directory != "path/to/dir") return 3;
-    if (input2.input != "hello") return 4;
-    if (input2.skip != 3) return 5;
-    if (!input2.verbose) return 6;
-    if (input2.stride != 10) return 7;
+    parse::Input input2 = cli2.args;
 
-    return 0;
+
+    if (input2.directory != "path/to/dir") s=3;
+    if (input2.input != "hello") s=4;
+    if (input2.skip != 3) s=5;
+    if (!input2.verbose) s=6;
+    if (input2.stride != 10) s=7;
+
+    std::cout << input2.stride << " HELLO\n";
+
+    return s;
 
 }
 
