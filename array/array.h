@@ -12,9 +12,11 @@ namespace array {
  * A continguous 3D array.
  */
 template<class T>
-class Arr3 : private std::vector<T> {
+class Arr3 : public std::vector<T> {
 
   public:
+
+    int h, w, d;
 
     Arr3() : std::vector<T>(), h(0), w(0), d(0) {}
 
@@ -28,8 +30,32 @@ class Arr3 : private std::vector<T> {
 
     void free() { this->clear(); }
 
-    int h, w, d;
+    void resize_contiguous(int x, int y, int z) {
+        // Naive approach for now
+
+        Arr3<T> temp(x,y,z);
+        for (int i = 0; i < x; i++) {
+            for (int j=0; j < y; j++) {
+                for (int k=0; k < z; k++) {
+                    if ((x > h) | (y > w) | (z > d)) { temp(i,j,k) = T(); }
+                    else { temp(i,j,k) = (*this)(i,j,k); }
+                }
+            }
+        }
+
+        this->resize(h*w*d);
+
+        for (int i = 0; i < x; i++) {
+            for (int j=0; j < y; j++) {
+                for (int k=0; k < z; k++) {
+                    (*this)(i,j,k) = temp(i,j,k);
+                }
+            }
+        }
+    }
+
 
 };
+
 
 }

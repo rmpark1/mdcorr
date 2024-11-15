@@ -28,7 +28,7 @@ LammpsReader::LammpsReader(Input args) :
     tokens = search_file(args.input, "run", NRUNS-1);
 
     if (tokens.size() < 1) {
-        throw std::invalid_argument(str("ERROR: File not found -- %s")+args.input);
+        throw std::invalid_argument(str("ERROR: File not found -- ")+args.input);
     }
     int n_sim_steps = std::stoi(tokens[1]);
 
@@ -75,11 +75,16 @@ int LammpsReader::load(A3 &velocities) {
     str line;
     int nsteps_found = 0;
     int tstep;
+    int progress;
 
     // Open all file streams
     for (auto &fname : paths) {
 
-        std::fstream file_handle(directory+os_sep+fname);
+        str full_path = directory+os_sep+fname;
+        std::fstream file_handle(full_path);
+        if (file_handle.fail()) {
+            throw std::invalid_argument(str("ERROR: Dump file not found -- ")+full_path);
+        }
         if(verbose) std::cout << "reading " << fname << "\n";
         fflush(stdout);
         std::getline(file_handle, line);
@@ -101,6 +106,9 @@ int LammpsReader::load(A3 &velocities) {
 
             if (verbose) {
                 // Print every 10% of the way there
+                if ((nsteps_found % (nsteps/10) == 0) | (nsteps_found == nsteps)) {
+                    printf("\rFound %d/%d timesteps.", nsteps_found, nsteps);
+                }
             }
 
             std::getline(file_handle, line);
@@ -110,7 +118,8 @@ int LammpsReader::load(A3 &velocities) {
         }
 
         if (nsteps_found != nsteps) {
-            throw std::length_error("Not all time steps found");
+            return nsteps_found;
+            // throw std::length_error("Not all time steps found");
         }
     }
     return 0;
@@ -168,9 +177,6 @@ void CLIReader::read_args(int argc, char *argv[]) {
         if (match("--directory", "-d")) { args.directory = str(arg_val); remaining -= 2; }
         if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
         if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
-        if (match("--stride", "-j")) {
-            std::cout << "READING STRIDE>>" << args.stride << "\n";
-        }
     }
 }
 
