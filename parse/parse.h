@@ -18,11 +18,6 @@ typedef array::Arr3<double> A3;
 
 namespace parse {
 
-/**
- * Lammps Reader that will extract data by inference from the input file.
- * All data output must be relative to the input file.
- */
-
 struct Input {
     str directory;
     str input;
@@ -31,6 +26,10 @@ struct Input {
     bool verbose;
 };
 
+/**
+ * Lammps Reader that will extract data by inference from the input file.
+ * All data output must be relative to the input file.
+ */
 class LammpsReader {
 
   public:
@@ -67,6 +66,7 @@ class CLIReader {
     
   public:
     Input args;
+    int help;
 
     CLIReader(int argc, char *argv[]);
     void read_args(int argc, char *argv[]);

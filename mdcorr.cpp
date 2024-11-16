@@ -10,6 +10,9 @@ int main(int argc, char *argv[]) {
 
     // Parse user input
     parse::CLIReader cli(argc, argv);
+
+    if (cli.check_help()) return 0;
+
     parse::LammpsReader data(cli.args);
 
     int nsteps = data.nsteps / cli.args.stride;
@@ -18,7 +21,7 @@ int main(int argc, char *argv[]) {
     data.load(velocities);
 
     // Perform correlations
-    std::cout << "Running autocorrelation\n";
+    if std::cout << "Running autocorrelation\n";
     fflush(stdout);
     A3 correlations(nsteps, data.natoms, 3);
     corr::autocorrelate(velocities, correlations);

@@ -1,5 +1,18 @@
 #include "parse.h"
 
+const str CLI_DOC = "Usage:\n"
+                    "mdcorr --input [INFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
+                    "Settings:\n"
+                    "--input, -i         The LAMMPS input file (required).\n"
+                    "--directory, -d     The calculation directory LAMMPS was run in.\n"
+                    "                    By default, this will be inferred from the parent\n"
+                    "                    directory of the LAMMPS input file.\n"
+                    "--skip, -s          Skip sum number of LAMMPS runs, i.e. skip an NVT\n"
+                    "                    part of the simulation. Default is 1.\n\n"
+                    "--stride, -j        Skip time steps with some stride.\n"
+                    "Flags:\n"
+                    "--verbose, -v       Print info.\n";
+
 str os_sep =
 #ifdef _WIN32
 "\\";
@@ -142,9 +155,12 @@ CLIReader::CLIReader(int argc, char *argv[]) {
     args.skip = 1;
     args.stride = 1;
     args.verbose = 0;
+    help = 0;
 
     read_args(argc, argv);
     check_input();
+
+    if (help) std::cout << CLI_DOC;
 }
 
 void CLIReader::read_args(int argc, char *argv[]) {
@@ -157,20 +173,14 @@ void CLIReader::read_args(int argc, char *argv[]) {
         auto match = [&arg](str s1, str s2) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
-        if (match("--verbose", "-v")) {
-            args.verbose = 1;
-            remaining -= 1;
-            continue;
-        }
+        if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
+        if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
         if (match("--input", "-i")) { args.input = str(arg_val); remaining -= 2; }
         if (match("--directory", "-d")) { args.directory = str(arg_val); remaining -= 2; }
         if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
         if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
-        if (match("--stride", "-j")) {
-            std::cout << "READING STRIDE>>" << args.stride << "\n";
-        }
     }
 }
 
@@ -181,23 +191,7 @@ void CLIReader::check_input() {
             printf("Missing input file argument: '--input <lammps_input>'\n");
             invalid = true;
     }
-
-    if (invalid) {
-        std::cout <<
-            "Usage:\n"
-            "mdcorr --input [INFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
-            "Settings:\n"
-            "--input, -i         The LAMMPS input file (required).\n"
-            "--directory, -d     The calculation directory LAMMPS was run in.\n"
-            "                    By default, this will be inferred from the parent\n"
-            "                    directory of the LAMMPS input file.\n"
-            "--skip, -s          Skip sum number of LAMMPS runs, i.e. skip an NVT\n"
-            "                    part of the simulation. Default is 1.\n\n"
-            "--stride, -j        Skip time steps with some stride.\n"
-            "Flags:\n"
-            "--verbose, -v       Print info.\n";
-    }
-
+    if (invalid) std::cout << CLI_DOC;
 }
 
 
