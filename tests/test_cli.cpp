@@ -18,7 +18,7 @@ int main() {
     if (!input.directory.empty()) s=1;
     if (input.input != "hello") s=2;
 
-    argc = 10;
+    argc = 11;
     char *argv2[] = {
         (char*)"mdcorr",
         (char*)"--input",
@@ -30,6 +30,7 @@ int main() {
         (char*)"3",
         (char*)"--stride",
         (char*)"10",
+        (char*)"--help",
         NULL
     };
 
@@ -43,8 +44,9 @@ int main() {
     if (input2.skip != 3) s=5;
     if (!input2.verbose) s=6;
     if (input2.stride != 10) s=7;
+    if (cli2.help != 1) s=8;
 
-    std::cout << input2.stride << " HELLO\n";
+    std::cout << s << " Exit Code\n";
 
     return s;
 

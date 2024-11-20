@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdlib>
 #include <cstdio>
 #include <fstream>
@@ -8,13 +9,16 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "array.h"
 
-typedef std::string str;
-typedef array::Arr3<double> A3;
+namespace chrono = std::chrono;
+typedef chrono::steady_clock timer;
 
-#define NRUNS 2 // NVT, then NVE
+typedef array::Arr3<double> A3;
+typedef std::string str;
+
 
 namespace parse {
 
@@ -66,6 +70,7 @@ class CLIReader {
     
   public:
     Input args;
+    int help;
 
     CLIReader(int argc, char *argv[]);
     void read_args(int argc, char *argv[]);
@@ -73,7 +78,7 @@ class CLIReader {
 };
 
 std::vector<str> split(str s, str delimiter=str(" "));
-std::vector<str> search_file(str fname, str match, int skip=0, str delimiter=str(" "));
+std::vector<std::vector<str> > search_file(str fname, str match);
 str get_parent(const str fname);
 
 }

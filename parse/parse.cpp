@@ -1,5 +1,18 @@
 #include "parse.h"
 
+const str CLI_DOC = "Usage:\n"
+                    "mdcorr --input [INFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
+                    "Settings:\n"
+                    "--input, -i         The LAMMPS input file (required).\n"
+                    "--directory, -d     The calculation directory LAMMPS was run in.\n"
+                    "                    By default, this will be inferred from the parent\n"
+                    "                    directory of the LAMMPS input file.\n"
+                    "--skip, -s          Skip sum number of LAMMPS runs, i.e. skip an NVT\n"
+                    "                    part of the simulation. Default is 1.\n\n"
+                    "--stride, -j        Skip time steps with some stride.\n"
+                    "Flags:\n"
+                    "--verbose, -v       Print info.\n";
+
 str os_sep =
 #ifdef _WIN32
 "\\";
@@ -22,29 +35,22 @@ LammpsReader::LammpsReader(Input args) :
 
     if (directory.empty()) directory = get_parent(args.input);
 
-    // Infer nsteps from output file
-    std::vector<str> tokens;
+    std::vector<std::vector<str> > tokens = search_file(args.input, "run");
 
-    tokens = search_file(args.input, "run", NRUNS-1);
-
-    if (tokens.size() < 1) {
-        throw std::invalid_argument(str("ERROR: File not found -- ")+args.input);
-    }
-    int n_sim_steps = std::stoi(tokens[1]);
+    int n_sim_steps = std::stoi(tokens[args.skip][1]);
 
     tokens = search_file(args.input, "dump");
-    int dump_stride = std::stoi(tokens[4]);
-    str dump_path = tokens[5];
+    std::vector<str> last_dump = tokens[tokens.size()-1];
+    int dump_stride = std::stoi(last_dump[4]);
+    str dump_path = last_dump[5];
     paths.push_back(dump_path);
 
     // Read number of species and number of each species
-    nspecies = 0;
+    tokens = search_file(args.input, "create_atoms");
+    int nspecies = tokens.size();
     natoms = 0;
-    while (true) {
-        tokens = search_file(args.input, "create_atoms", nspecies);
-        if (tokens.size() == 0) break;
-        nspecies++;
-        natoms += std::stoi(tokens[3]);
+    for (auto tok : tokens) {
+        natoms += std::stoi(tok[3]);
     }
 
     nsteps = (n_sim_steps / dump_stride) + 1;
@@ -70,6 +76,7 @@ LammpsReader::LammpsReader(Input args) :
  */
 int LammpsReader::load(A3 &velocities) {
 
+
     double vx, vy, vz;
     int id;
     str line;
@@ -85,10 +92,10 @@ int LammpsReader::load(A3 &velocities) {
         if (file_handle.fail()) {
             throw std::invalid_argument(str("ERROR: Dump file not found -- ")+full_path);
         }
-        if(verbose) std::cout << "reading " << fname << "\n";
-        fflush(stdout);
-        std::getline(file_handle, line);
+        if(verbose) std::cout << "Reading " << full_path << " ... " << std::flush;
 
+        const auto start = timer::now();
+        std::getline(file_handle, line);
         while (!file_handle.eof()) {
 
             for (int i=0; i<8; i++) std::getline(file_handle, line);
@@ -102,27 +109,26 @@ int LammpsReader::load(A3 &velocities) {
                     velocities(tstep, id-1, 2) = vz;
                 }
             }
+            
             nsteps_found++;
 
-            if (verbose) {
-                // Print every 10% of the way there
-                if ((nsteps_found % (nsteps/10) == 0) | (nsteps_found == nsteps)) {
-                    printf("\rFound %d/%d timesteps.", nsteps_found, nsteps);
-                }
-            }
+            std::getline(file_handle, line);
+            std::getline(file_handle, line);
 
-            std::getline(file_handle, line);
-            std::getline(file_handle, line);
+            if (verbose & (nsteps_found % 100 == 0)) {
+                std::cout << nsteps_found << std::endl;
+            }
 
             if (nsteps_found >= nsteps) break;
         }
 
-        if (nsteps_found != nsteps) {
-            return nsteps_found;
-            // throw std::length_error("Not all time steps found");
-        }
+        const auto finish = timer::now();
+        if (verbose) std::cout << "finished in "
+            << chrono::duration_cast<chrono::minutes>(finish - start) << std::endl;
+
     }
-    return 0;
+
+    return nsteps_found/stride;
 }
 
 int LammpsReader::load_range(array::Arr3<int> bounds) {
@@ -151,9 +157,13 @@ CLIReader::CLIReader(int argc, char *argv[]) {
     args.skip = 1;
     args.stride = 1;
     args.verbose = 0;
+    help = 0;
 
     read_args(argc, argv);
+    if (help) std::cout << CLI_DOC; return;
+
     check_input();
+
 }
 
 void CLIReader::read_args(int argc, char *argv[]) {
@@ -166,11 +176,8 @@ void CLIReader::read_args(int argc, char *argv[]) {
         auto match = [&arg](str s1, str s2) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
-        if (match("--verbose", "-v")) {
-            args.verbose = 1;
-            remaining -= 1;
-            continue;
-        }
+        if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
+        if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
         if (match("--input", "-i")) { args.input = str(arg_val); remaining -= 2; }
@@ -187,23 +194,7 @@ void CLIReader::check_input() {
             printf("Missing input file argument: '--input <lammps_input>'\n");
             invalid = true;
     }
-
-    if (invalid) {
-        std::cout <<
-            "Usage:\n"
-            "mdcorr --input [INFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
-            "Settings:\n"
-            "--input, -i         The LAMMPS input file (required).\n"
-            "--directory, -d     The calculation directory LAMMPS was run in.\n"
-            "                    By default, this will be inferred from the parent\n"
-            "                    directory of the LAMMPS input file.\n"
-            "--skip, -s          Skip sum number of LAMMPS runs, i.e. skip an NVT\n"
-            "                    part of the simulation. Default is 1.\n\n"
-            "--stride, -j        Skip time steps with some stride.\n"
-            "Flags:\n"
-            "--verbose, -v       Print info.\n";
-    }
-
+    if (invalid) std::cout << CLI_DOC;
 }
 
 
@@ -221,23 +212,56 @@ std::vector<str> split(str s, str delimiter) {
     return tokens;
 }
 
-std::vector<str> search_file(str fname, str match, int skip, str delimiter) {
+// Read lammps log file and find keyword specifications
+std::vector<std::vector<str> > search_file(str fname, str match) {
 
     std::fstream instream(fname);
-    if (instream.fail()) return std::vector<str>();
+    if (instream.fail())
+        throw std::invalid_argument(str("ERROR: File not found -- ") + fname);
+
+    int line_number = 0;
+    auto getline = [&instream, &line_number](str &line) {
+        std::getline(instream, line);
+        line_number++;
+    };
 
     str line;
-    std::getline(instream, line);
+    getline(line);
 
-    for (int irun = 0; irun <= skip; irun++) {
-        while (line.find(match) == str::npos) {
-            if (instream.eof()) return std::vector<str>();
-            std::getline(instream, line);
+    std::vector<std::vector<str> > token_list;
+
+    // Replace whitespace with spaces to get common delimiter
+    std::regex white("\\s+");
+
+    while (!instream.eof()) {
+
+        while (!line.starts_with(match) & !instream.eof()) getline(line);
+        if (instream.eof() & !line.starts_with(match)) break;
+
+        // At line with correct keyword, loop until ${variable} expressions have been evaluated.
+        while (line.find("${") != str::npos) getline(line);
+
+        // Make sure this is the same keyword,
+        // throw error if, e.g., an input file with ${} expressions has been passed.
+        if (line.find(match) == str::npos) {
+            str msg = "Input file has unevaluated ${variable} expressions on line "
+                + std::to_string(line_number) + "\n";
+            throw std::invalid_argument(msg);
         }
-        if (irun < skip) std::getline(instream, line);
+
+        str space = std::regex_replace(line, white, " ");
+        std::vector<str> split_str = split(space, " ");
+        token_list.push_back(split_str);
+
+        getline(line);
     }
-    std::vector<str> tokens = split(line, delimiter);
-    return tokens;
+ 
+    if (token_list.size() == 0) {
+        throw std::invalid_argument(str("LAMMPS file does not have a '"
+            + match + str("' statement(s)")));
+    }
+
+    return token_list;
 }
 
 // Infer directory relative to the infile

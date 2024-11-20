@@ -2,15 +2,16 @@
 
 namespace corr {
 
-/* run correlation over first axis */
 void crosscorrelate(A3 &in1, A3 &in2, A3 &output) {
 
-    double sum;
-
     for (int k=0; k < in1.d; k++) {
-        for (int j=0; j < in1.w; j++) {
 
-            // Perform correlation
+        std::vector<int> atom_loop(in1.w);
+        std::iota(atom_loop.begin(), atom_loop.end(), 0);
+
+        // Create correlation mapping
+        auto single_atom_corr = [&k, &in1, &in2, &output](int j) {
+            double sum;
             for (int t=0; t < in1.h; t++) {
                 sum = 0.0;
                 for (int tp=0; tp < in1.h-t; tp++) {
@@ -18,8 +19,19 @@ void crosscorrelate(A3 &in1, A3 &in2, A3 &output) {
                 }
                 output(t,j,k) = sum / (in1.h-t);
             }
-        }
+        };
+
+        std::for_each(
+            #ifdef PARALLEL
+            std::execution::par_unseq,
+            #else
+            std::execution::seq,
+            #endif
+            atom_loop.begin(),
+            atom_loop.end(),
+            single_atom_corr);
     }
+
 }
 
 void autocorrelate(A3 &input, A3 &output) { crosscorrelate(input, input, output); }

@@ -1,7 +1,7 @@
 compile=true
 build_dev=true
 test=true
-rebuild=false
+rebuild=true
 
 if ${compile}; then
     if ${rebuild}; then rm -r build; fi
@@ -12,11 +12,14 @@ if ${compile}; then
     if ${build_dev}; then
         cmake \
             -D CMAKE_BUILD_TYPE=DEBUG \
-            -D BUILD_TESTING=DEBUG \
+            -D BUILD_TESTING=TRUE \
+            -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" \
             ..
+            # -D PARALLEL=TRUE \
     else
-        cmake ..
+        cmake -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" ..
     fi
+
 
     cmake --build . -j 10 
     cd ..
@@ -28,3 +31,5 @@ if ${test}; then
     ctest --rerun-failed --output-on-failure
     cd ..
 fi
+
+# || Computing autocorrelation ... finished in 21s

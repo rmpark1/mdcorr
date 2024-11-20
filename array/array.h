@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <ranges>
+#include <iterator>
 #include <vector>
 
 // namespace views = std::views;
@@ -43,7 +43,10 @@ class Arr3 : public std::vector<T> {
             }
         }
 
-        this->resize(h*w*d);
+        this->resize(x*y*z);
+        h = x;
+        w = y;
+        d = z;
 
         for (int i = 0; i < x; i++) {
             for (int j=0; j < y; j++) {
@@ -53,6 +56,7 @@ class Arr3 : public std::vector<T> {
             }
         }
     }
+
 
 
 };
