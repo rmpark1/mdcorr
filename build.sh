@@ -1,7 +1,7 @@
 compile=true
 build_dev=true
 test=true
-rebuild=true
+rebuild=false
 
 if ${compile}; then
     if ${rebuild}; then rm -r build; fi

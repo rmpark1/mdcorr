@@ -15,7 +15,7 @@ int main() {
     for (int i=0; i < N; i++) {
         a(i,0,0) = i*.1;
     }
-    corr::autocorrelate(a, b);
+    corr::autocorrelate(a, b, 0);
 
     for (int i=0; i < N; i++) {
         std::cout << b(i,0,0) << "\n";

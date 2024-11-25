@@ -13,7 +13,7 @@ int main() {
 
     parse::CLIReader cli(argc, argv);
 
-    parse::Input input = cli.args;
+    parse::LammpsSettings input = cli.args;
 
     if (!input.directory.empty()) s=1;
     if (input.input != "hello") s=2;
@@ -36,7 +36,7 @@ int main() {
 
     parse::CLIReader cli2(argc, (char **)argv2);
 
-    parse::Input input2 = cli2.args;
+    parse::LammpsSettings input2 = cli2.args;
 
 
     if (input2.directory != "path/to/dir") s=3;

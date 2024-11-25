@@ -12,21 +12,15 @@ typedef chrono::steady_clock timer;
 
 int main(int argc, char *argv[]) {
 
-    #ifdef PARALLEL
-    std::cout << "RUNNING IN PAR\n";
-    #else
-    std::cout << "RUNNING SEQ\n";
-    #endif
-
     // Parse user input
     parse::CLIReader cli(argc, argv);
-
     if (cli.help) return 0;
 
+    // Parse LAMMPS input
     parse::LammpsReader data(cli.args);
 
-    int nsteps = data.nsteps / cli.args.stride;
     // Load all data into contiguous array
+    int nsteps = data.nsteps / cli.args.stride;
     A3 velocities(nsteps, data.natoms, 3);
     int found = data.load(velocities);
 
@@ -45,13 +39,12 @@ int main(int argc, char *argv[]) {
 
     const auto start = timer::now();
 
-    corr::autocorrelate(velocities, correlations);
+    corr::autocorrelate(velocities, correlations, cli.fft);
 
     const auto finish = timer::now();
     if (cli.args.verbose) {
         std::cout << "finished in "
-        << chrono::duration_cast<chrono::seconds>(finish - start) << "\n";
-        fflush(stdout);
+        << chrono::duration_cast<chrono::seconds>(finish - start) << std::endl;
     }
 
     // Average

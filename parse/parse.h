@@ -22,7 +22,7 @@ typedef std::string str;
 
 namespace parse {
 
-struct Input {
+struct LammpsSettings {
     str directory;
     str input;
     int skip;
@@ -51,7 +51,7 @@ class LammpsReader {
     int nsteps;
     int nloaded;
 
-    LammpsReader(Input args);
+    LammpsReader(LammpsSettings args);
 
     // Load all the data, careful for large files.
     int load(A3 &velocities);
@@ -69,8 +69,9 @@ class LammpsReader {
 class CLIReader {
     
   public:
-    Input args;
+    LammpsSettings args;
     int help;
+    bool fft;
 
     CLIReader(int argc, char *argv[]);
     void read_args(int argc, char *argv[]);

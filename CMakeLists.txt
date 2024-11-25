@@ -48,6 +48,7 @@ if (BUILD_TESTING)
         test_correlate
         test_valid_file
         test_parallel
+        test_fft
     )
 
     foreach(TFI ${TEST_FILES})

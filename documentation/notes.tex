@@ -1,0 +1,75 @@
+% Preamble inputs
+\documentclass[11pt, a4paper]{article}
+\input{~/setup/mac/config/latex/templates/preamble.tex}
+\input{~/setup/mac/config/latex/templates/diff-macros.tex}
+% \input{~/setup/mac/config/latex/templates/header.tex}
+\input{~/setup/mac/config/latex/templates/vector-calc-macros.tex}
+
+\title{MDCorr Notes}
+\author{Ryan Park}
+\date{\today}
+
+\begin{document}
+\input{~/setup/mac/config/latex/templates/length-adjust.tex}
+\maketitle
+\tableofcontents
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+
+\section{FFT}
+
+The discrete Fourrier transform of a series $x_{n}$ with size $N$ is computed as
+\begin{equation}\begin{aligned}
+    X_{k} = \sum_{n}^{N-1} x_{n} e^{-2 \pi i k n / N}, \\
+\end{aligned}\end{equation}
+and its inverse,
+\begin{equation}\begin{aligned}
+    x_{n} = \frac{1}{N}\sum_{k=0}^{N-1} e^{2 \pi i k n /N}, \\
+\end{aligned}\end{equation}
+These transformations can be denoted,
+\begin{equation}\begin{aligned}
+    X_{k} &= \mathcal{F}_{N}\cu{x_{n}} \\
+    x_{x} &= \mathcal{F}_{N}^{-1}\cu{X_{k}} \\
+\end{aligned}\end{equation}
+where $N$ is the size of the tranform operation.
+Now suppose $N$ is divisible by some integer $a$.
+The sum can be decomposed into parts,
+\begin{equation}\begin{aligned}
+    X_{k}
+    &= \sum_{l=0}^{a} \sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k \p{am + l} / N} \\
+    &= \sum_{l=0}^{a} e^{-2 \pi i l/N}\sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k \p{am} / N} \\
+    &= \sum_{l=0}^{a} e^{-2 \pi i l/N}\sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k m / \p{N/a}} \\
+    \mathcal{F}_{N} \cu{x_{n}} &= \sum_{l=0}^{a} e^{-2 \pi i l/N} \mathcal{F}_{N/a} \cu{x_{a m + l}} \\
+\end{aligned}\end{equation}
+Similarly
+\begin{equation}\begin{aligned}
+    \mathcal{F}^{-1}_{N} \cu{X_{k}} = \frac{1}{N} \sum_{l=0}^{a} e^{2 \pi i l /N} \mathcal{F}_{N/a}^{-1} \cu{x_{am + l}}.
+\end{aligned}\end{equation}
+Thus the Fourrier transform can thus be decomposed into the sum of smaller fourrier transforms.
+The runtime of this substep $s$ with size $n_{s}$ is
+\begin{equation}\begin{aligned}
+    R_{s}\p{n_{s}} &= a_{s} n_{s} + a_{s}R_{s+1} \p{n_{s}/a_{s}} \\
+    &= a_{s} \p{n_{s} + R_{s+1}\p{n_{s}/a_{s}}} \\
+    &= a_{s}\p{n_{s} + a_{s+1} \p{n_{s+1} + R_{s+2}\p{n_{s+1}/a_{s+1}}}} \\
+    &= ...
+\end{aligned}\end{equation}
+This is because each $k \in 0, ..., n_{s}-1$ must be evaluated. Assuming $a_{s}$ $R_{s+1}$ subproblems have already been performed,
+that leaves an $O\p{1}$ read operation from the child calculation and $a$ butterfly operations for each $k$.
+If $N$ has the prime factorization $a_{s}$, then there will be $\abs{\vec{a}}$ layers, each with a cost of
+$n_{s}a_{s}$ for each step. The size of each layer is given by
+\begin{equation}\begin{aligned}
+    n_{s} = N \prod_{r=0}^{s} a_{r}^{-1}
+\end{aligned}\end{equation}
+with $a_{0} \equiv 1$.
+The composition of these runtimes is therefore,
+\begin{equation}\begin{aligned}
+    R\p{N} &= \sum_{s=1}^{\abs{\vec{a}}} a_{s} N \prod_{r=0}^{s} a_{r}^{-1} \\
+    &= N \sum_{s=1}^{\abs{\vec{a}}} \prod_{r=0}^{s-1} a_{r}^{-1} \\
+\end{aligned}\end{equation}
+Now suppose all $a_{s} = N/\abs{\vec{a}}\equiv a$,
+then
+\begin{equation}\begin{aligned}
+    R\p{N} = N \sum_{s=1}^{\abs{\vec{a}}} a^{-\p{s-1}}
+\end{aligned}\end{equation}
+
+
+\end{document}

@@ -11,6 +11,7 @@ const str CLI_DOC = "Usage:\n"
                     "                    part of the simulation. Default is 1.\n\n"
                     "--stride, -j        Skip time steps with some stride.\n"
                     "Flags:\n"
+                    "--fft, -f           Use FFT implementation (on by default).\n"
                     "--verbose, -v       Print info.\n";
 
 str os_sep =
@@ -27,7 +28,7 @@ namespace parse {
  *
  * @param infile the LAMMPS input file.
  */
-LammpsReader::LammpsReader(Input args) :
+LammpsReader::LammpsReader(LammpsSettings args) :
         verbose(args.verbose),
         skip(args.skip),
         stride(args.stride),
@@ -152,12 +153,15 @@ void LammpsReader::write_array(A3 &arr, str fname) {
 CLIReader::CLIReader(int argc, char *argv[]) {
 
     // Default settings
+
     args.directory = "";
     args.input = "";
     args.skip = 1;
     args.stride = 1;
     args.verbose = 0;
+
     help = 0;
+    fft = 1;
 
     read_args(argc, argv);
     if (help) std::cout << CLI_DOC; return;
@@ -177,6 +181,7 @@ void CLIReader::read_args(int argc, char *argv[]) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
+        if (match("--fft", "-f")) { fft = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
