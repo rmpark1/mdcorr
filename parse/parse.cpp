@@ -32,6 +32,7 @@ LammpsReader::LammpsReader(LammpsSettings args) :
         verbose(args.verbose),
         skip(args.skip),
         stride(args.stride),
+        timesteps(args.timesteps),
         directory(args.directory) {
 
     if (directory.empty()) directory = get_parent(args.input);
@@ -77,7 +78,6 @@ LammpsReader::LammpsReader(LammpsSettings args) :
  */
 int LammpsReader::load(A3 &velocities) {
 
-
     double vx, vy, vz;
     int id;
     str line;
@@ -93,7 +93,7 @@ int LammpsReader::load(A3 &velocities) {
         if (file_handle.fail()) {
             throw std::invalid_argument(str("ERROR: Dump file not found -- ")+full_path);
         }
-        if(verbose) std::cout << "Reading " << full_path << " ... " << std::flush;
+        if(verbose) std::cout << "Reading " << full_path << std::endl;
 
         const auto start = timer::now();
         std::getline(file_handle, line);
@@ -104,7 +104,7 @@ int LammpsReader::load(A3 &velocities) {
             for (int i=0; i< natoms; i++) {
                 file_handle >> id >> vx >> vy >> vz;
                 tstep = nsteps_found/stride;
-                if (nsteps_found % stride == 0) {
+                if ((nsteps_found % stride == 0)) {
                     velocities(tstep, id-1, 0) = vx;
                     velocities(tstep, id-1, 1) = vy;
                     velocities(tstep, id-1, 2) = vz;
@@ -116,15 +116,16 @@ int LammpsReader::load(A3 &velocities) {
             std::getline(file_handle, line);
             std::getline(file_handle, line);
 
-            if (verbose & (nsteps_found % 100 == 0)) {
-                std::cout << nsteps_found << std::endl;
-            }
+            // if (verbose & (nsteps_found % 100 == 0)) {
+            //     std::cout << nsteps_found << std::endl;
+            // }
 
             if (nsteps_found >= nsteps) break;
+            if (nsteps_found >= timesteps) break;
         }
 
         const auto finish = timer::now();
-        if (verbose) std::cout << "finished in "
+        if (verbose) std::cout << "Finished reading in "
             << chrono::duration_cast<chrono::minutes>(finish - start) << std::endl;
 
     }
@@ -159,6 +160,7 @@ CLIReader::CLIReader(int argc, char *argv[]) {
     args.skip = 1;
     args.stride = 1;
     args.verbose = 0;
+    args.timesteps = -1;
 
     help = 0;
     fft = 1;
@@ -181,7 +183,6 @@ void CLIReader::read_args(int argc, char *argv[]) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
-        if (match("--fft", "-f")) { fft = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
@@ -189,6 +190,8 @@ void CLIReader::read_args(int argc, char *argv[]) {
         if (match("--directory", "-d")) { args.directory = str(arg_val); remaining -= 2; }
         if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
         if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
+        if (match("--steps", "-t")) { args.timesteps = std::stoi(arg_val); remaining -= 2; }
+        if (match("--fft", "-f")) { fft = std::stoi(arg_val); remaining -= 2; }
     }
 }
 

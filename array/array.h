@@ -30,69 +30,43 @@ class Arr3 : public std::vector<T> {
 
     void free() { this->clear(); }
 
-
-    void resize_contiguous(int x, int y, int z) {
-        // Naive approach for now
-
-        // X dimension
-        // Add if larger size
-        for (int k = d-1; k >= 0; k--) {
-            for (int j = w-1; j >= 0; j--) {
-                for (int i = h; i < x; i++) {
-                    this->insert(this->begin()+(i + j*h + k*h*w), 0);
-                }
-            }
-        }
-        // Subtract if smaller size
-        for (int k = d-1; k >= 0; k--) {
-            for (int j = w-1; j >= 0; j--) {
-                for (int i = h-1; i >= x; i--) {
-                    this->erase(this->begin()+(i + j*h + k*h*w));
-                }
-            }
-        }
-        h = x;
-        // Y dimension
-        // Add if larger size
-        for (int k = d-1; k >= 0; k--) {
-            for (int j = w; j < y; j++) {
-                for (int i = 0; i < h; i++) {
-                    this->insert(this->begin()+(i + j*h + k*h*w), 0);
-                }
-            }
-        }
-        // Subtract if smaller size
-        for (int k = d-1; k >= 0; k--) {
-            for (int j = w-1; j >= y; j--) {
-                for (int i = h-1; i >= 0 ; i--) {
-                    this->erase(this->begin()+(i + j*h + k*h*w));
-                }
-            }
-        }
-        w = y;
-
-        // Z dimension
-        // Add if larger size
-        for (int k = d; k < z; k++) {
+    void arange() {
+        int c = 0;
+        for (int k = 0; k < d; k++) {
             for (int j = 0; j < w; j++) {
                 for (int i = 0; i < h; i++) {
-                    this->insert(this->begin()+(i + j*h + k*h*w), 0);
+                    (*this)(i, j, k) = c;
+                    c++;
                 }
             }
         }
-        // Subtract if smaller size
-        for (int k = d-1; k >= z; k--) {
-            for (int j = w-1; j >= 0; j--) {
-                for (int i = h-1; i >=0; i--) {
-                    this->erase(this->begin()+(i + j*h + k*h*w));
+    }
+
+    void resize_contiguous(int x, int y, int z) {
+
+        Arr3<T> temp(x,y,z);
+        for (int i=0; i < x; i++) {
+            for (int j=0; j < y; j++) {
+                for (int k=0; k < z; k++) {
+                    if ((i > h-1) | (j > w-1) | (k > d-1)) temp(i,j,k) = T();
+                    else temp(i,j,k) = (*this)(i,j,k);
                 }
             }
         }
+
+        this->resize(x*y*z);
+        h = x;
+        w = y;
         d = z;
 
+        for (int i = 0; i < x; i++) {
+            for (int j=0; j < y; j++) {
+                for (int k=0; k < z; k++) {
+                    (*this)(i,j,k) = temp(i,j,k);
+                }
+            }
+        }
     }
 };
-
-
 
 }

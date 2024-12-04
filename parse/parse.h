@@ -27,6 +27,7 @@ struct LammpsSettings {
     str input;
     int skip;
     int stride;
+    unsigned int timesteps;
     bool verbose;
 };
 
@@ -41,6 +42,7 @@ class LammpsReader {
     bool verbose;
     int skip;
     int stride;
+    unsigned int timesteps;
 
     // Per file
     std::vector<str> paths;

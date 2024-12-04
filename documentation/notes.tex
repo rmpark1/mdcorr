@@ -15,61 +15,133 @@
 \tableofcontents
 \renewcommand{\vec}[1]{\boldsymbol{#1}}
 
-\section{FFT}
+\section{Correlations}
 
-The discrete Fourrier transform of a series $x_{n}$ with size $N$ is computed as
+There are general relationships between correlations and Fourier transforms. Especially,
+there is the convolution theorem. Define the convolution as
 \begin{equation}\begin{aligned}
-    X_{k} = \sum_{n}^{N-1} x_{n} e^{-2 \pi i k n / N}, \\
+    g\p{t} * h\p{t} \equiv \int_{-\infty}^{\infty} g\p{\tau} h\p{t - \tau} \diff \tau. \\
+\end{aligned}\end{equation}
+Define the Fourier transform as
+\begin{equation}\begin{aligned}
+    H\p{f} \equiv \mathcal{F} \cu{h\p{t}} \p{f} = \int_{- \infty}^{\infty} h\p{t} e^{2 \pi i f t} \diff t
+\end{aligned}\end{equation}
+and the inverse,
+\begin{equation}\begin{aligned}
+    h\p{t} = \mathcal{F}^{-1}\cu{H\p{f}} = \int_{-\infty}^{\infty} H\p{f} e^{-2 \pi i f t} \diff f
+\end{aligned}\end{equation}
+The convolution theorem states:
+\begin{equation}\begin{aligned}
+    \mathcal{F} \cu{g * h} = G\p{f} H\p{f} \\
+\end{aligned}\end{equation}
+The correlation of two functions may be written as,
+\begin{equation}\begin{aligned}
+    \text{Corr}\p{g, h} = g\p{t} * h\p{-t} \\
+\end{aligned}\end{equation}
+If both $g$ and $h$ are real, then
+\begin{equation}\begin{aligned}
+    \text{Corr} \p{g, h} &= G\p{f} H\p{f}^{*} \\
+    \text{Corr}\p{g, h} &= \mathcal{F}^{-1} \cu{ \mathcal{F} \cu{g} \mathcal{F}\cu{h}^{*}} \\
+\end{aligned}\end{equation}
+If the correlation is with the same real function~\cite{Press1992}, i.e., it is a real autocorrelation,
+then the solution takes a simple form
+\begin{equation}\begin{aligned}
+    \text{Corr}\p{g, g} = \mathcal{F}^{-1} \cu{\abs{G}^{2}}.
+\end{aligned}\end{equation}
+This is known as the ``Wiener-Khinchin Theorem''.
+
+\section{Discretization}
+The Discrete Fourier Transform (DFT) of a complex series $x_{n}$ with size $N$ is computed as
+\begin{equation}\begin{aligned}
+    X_{k} = \sum_{n}^{N-1} x_{n} e^{2 \pi i k n / N}, \\
 \end{aligned}\end{equation}
 and its inverse,
 \begin{equation}\begin{aligned}
-    x_{n} = \frac{1}{N}\sum_{k=0}^{N-1} e^{2 \pi i k n /N}, \\
+    x_{n} = \frac{1}{N}\sum_{k=0}^{N-1} X_{k} e^{-2 \pi i k n /N}. \\
 \end{aligned}\end{equation}
-These transformations can be denoted,
+There is a corresponding discrete theorem called the circular convolution theorem.
+
+\section{FFT}
+The DFT can be denoted,
 \begin{equation}\begin{aligned}
-    X_{k} &= \mathcal{F}_{N}\cu{x_{n}} \\
-    x_{x} &= \mathcal{F}_{N}^{-1}\cu{X_{k}} \\
+    \vec{X} &= \mathcal{F}_{N}\cu{\vec{x}} \\
+    \vec{x} &= \mathcal{F}_{N}^{-1}\cu{\vec{X}} \\
 \end{aligned}\end{equation}
-where $N$ is the size of the tranform operation.
+where $N$ is the size of the input and output vectors of the tranform operation.
 Now suppose $N$ is divisible by some integer $a$.
 The sum can be decomposed into parts,
 \begin{equation}\begin{aligned}
     X_{k}
-    &= \sum_{l=0}^{a} \sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k \p{am + l} / N} \\
-    &= \sum_{l=0}^{a} e^{-2 \pi i l/N}\sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k \p{am} / N} \\
-    &= \sum_{l=0}^{a} e^{-2 \pi i l/N}\sum_{m=0}^{ N/a } x_{am + l} e^{-2 \pi i k m / \p{N/a}} \\
-    \mathcal{F}_{N} \cu{x_{n}} &= \sum_{l=0}^{a} e^{-2 \pi i l/N} \mathcal{F}_{N/a} \cu{x_{a m + l}} \\
+    &= \sum_{s=0}^{a-1} \sum_{m=0}^{ N/a } x_{am + s} e^{2 \pi i k \p{am + s} / N} \\
+    &= \sum_{s=0}^{a-1} e^{2 \pi i k s/N}\sum_{m=0}^{ N/a } x_{am + s} e^{2 \pi i k \p{am} / N} \\
+    &= \sum_{s=0}^{a-1} e^{2 \pi i k s/N}\sum_{m=0}^{ N/a } x_{am + s} e^{2 \pi i k m / \p{N/a}} \\
+    \mathcal{F}_{N} \cu{\vec{x}}_{k} &= \sum_{s=0}^{a-1} e^{2 \pi i k s/N} \mathcal{F}_{N/a} \cu{\vec{x}}_{k} \\
 \end{aligned}\end{equation}
-Similarly
+Thus the Fourier transform can be decomposed into the sum of smaller Fourier transforms. This results in a computational
+speedup because $\mathcal{F}_{N/a} \cu{\vec{x}}_{k}$ is periodic in $k$ with periodicity $N/a$. Thus
 \begin{equation}\begin{aligned}
-    \mathcal{F}^{-1}_{N} \cu{X_{k}} = \frac{1}{N} \sum_{l=0}^{a} e^{2 \pi i l /N} \mathcal{F}_{N/a}^{-1} \cu{x_{am + l}}.
+    \mathcal{F}_{N/a} \cu{\vec{x}}_{k} = \mathcal{F}_{N/a} \cu{\vec{x}}_{k \text{ mod } N/a}.
 \end{aligned}\end{equation}
-Thus the Fourrier transform can thus be decomposed into the sum of smaller fourrier transforms.
-The runtime of this substep $s$ with size $n_{s}$ is
+Therefore
 \begin{equation}\begin{aligned}
-    R_{s}\p{n_{s}} &= a_{s} n_{s} + a_{s}R_{s+1} \p{n_{s}/a_{s}} \\
-    &= a_{s} \p{n_{s} + R_{s+1}\p{n_{s}/a_{s}}} \\
-    &= a_{s}\p{n_{s} + a_{s+1} \p{n_{s+1} + R_{s+2}\p{n_{s+1}/a_{s+1}}}} \\
-    &= ...
+    \mathcal{F}_{N} \cu{\vec{x}}_{k} &= \sum_{s=0}^{a-1} e^{2 \pi i k s/N} \mathcal{F}_{N/a} \cu{\vec{x}}_{k \text{ mod } N/a}. \\
+\end{aligned}\end{equation}
+Similarly,
+\begin{equation}\begin{aligned}
+    \mathcal{F}^{-1}_{N} \cu{\vec{x}}_{n} = \frac{1}{N} \sum_{s=0}^{a-1} e^{-2 \pi i n s /N} \mathcal{F}_{N/a}^{-1} \cu{\vec{X}}_{n \text{ mod } N/a}.
+\end{aligned}\end{equation}
+The single thread runtime of this substep $l$ with size $n_{l}$ is
+\begin{equation}\begin{aligned}
+    R_{l}\p{n_{l}} &= a_{l} n_{l} + a_{l}R_{l-1} \p{n_{l}/a_{l}} \\
+    &= a_{l} \p{n_{l} + R_{l-1}\p{n_{l}/a_{l}}} \\
 \end{aligned}\end{equation}
 This is because each $k \in 0, ..., n_{s}-1$ must be evaluated. Assuming $a_{s}$ $R_{s+1}$ subproblems have already been performed,
 that leaves an $O\p{1}$ read operation from the child calculation and $a$ butterfly operations for each $k$.
-If $N$ has the prime factorization $a_{s}$, then there will be $\abs{\vec{a}}$ layers, each with a cost of
-$n_{s}a_{s}$ for each step. The size of each layer is given by
+If $N$ has the prime factorization $a_{p}$ of length $P$, then there will be $P$ layers. Enumerate these layers starting from
+a base case $a_{1}, a_{2}, ..., a_{P}$.
 \begin{equation}\begin{aligned}
-    n_{s} = N \prod_{r=0}^{s} a_{r}^{-1}
+    R_{2} &= a_{2} \p{n_{2} + R_{1}} \\
+    R_{3} &= a_{3} \p{n_{3} + a_{2} \p{n_{2} + R_{1}}} \\
+    R_{4} &= a_{4} \p{n_{4} + a_{3} \p{n_{3} + a_{2} \p{n_{2} + R_{1}}}} \\
+          &= a_{4} n_{4} + a_{4} a_{3} n_{3} + a_{4} a_{3} a_{2} n_{2} + a_{4} a_{3} a_{2} R_{1} \\
+          &\vdots \\
+    R_{P} =  R \p{N} &= \sum_{l=2}^{P} n_{l} \prod_{p=2}^{P} a_{p} + R_{1} \prod_{p=1}^{P} a_{p} \\
+    &=  \sum_{l=2}^{P} n_{l} \prod_{p=l}^{P} a_{p} + R_{1} N \\
 \end{aligned}\end{equation}
-with $a_{0} \equiv 1$.
-The composition of these runtimes is therefore,
+The size of each layer is given by
 \begin{equation}\begin{aligned}
-    R\p{N} &= \sum_{s=1}^{\abs{\vec{a}}} a_{s} N \prod_{r=0}^{s} a_{r}^{-1} \\
-    &= N \sum_{s=1}^{\abs{\vec{a}}} \prod_{r=0}^{s-1} a_{r}^{-1} \\
+    n_{l} = \prod_{p=1}^{l-1} a_{p}
 \end{aligned}\end{equation}
-Now suppose all $a_{s} = N/\abs{\vec{a}}\equiv a$,
-then
+Thus
 \begin{equation}\begin{aligned}
-    R\p{N} = N \sum_{s=1}^{\abs{\vec{a}}} a^{-\p{s-1}}
+    R = \sum_{l=1}^{P} a_{l} \prod_{p=1}^{P} a_{p} = N \sum_{l=1}^{P} a_{l}
+\end{aligned}\end{equation}
+% kThe runtime is clearly optimized whe
+The indices respect a similar recursive relationship
+\begin{equation}\begin{aligned}
+    x_{n,l} = a_{l} x_{n,l} + s_{l}
+\end{aligned}\end{equation}
+In explicit form,
+\begin{equation}\begin{aligned}
+    x_{n,l-1} &= a_{l} x_{n, l} + s_{l} \\
+    x_{n+1, l} &= \frac{x_{n_{l}} - s_{l}}{a_{l}} \\
 \end{aligned}\end{equation}
 
+\begin{itemize}
+    \item explicit index mapping
+    \item complex number respresentation.
+\end{itemize}
+
+\begin{itemize}
+    \item The RDF cutoff must coordinate with the ghost mapping when the realspace cutoff is small.
+    \item This can be fixed with the command
+    \begin{lstlisting}
+        comm_modify cutoff {RDF cutoff + skin}.
+    \end{lstlisting}
+\end{itemize}
+
+
+\bibliographystyle{plain}
+\bibliography{refs}
 
 \end{document}

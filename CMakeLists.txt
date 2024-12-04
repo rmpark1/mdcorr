@@ -13,7 +13,6 @@ endif()
 
 configure_file(mdcorr.h.in mdcorr.h)
 
-
 add_subdirectory(array)
 add_subdirectory(corr)
 add_subdirectory(fft)
@@ -23,7 +22,7 @@ add_subdirectory(parse)
 add_executable(mdcorr mdcorr.cpp)
 
 target_link_libraries(parse PUBLIC array compiler_flags)
-target_link_libraries(fft PUBLIC array compiler_flags)
+# target_link_libraries(fft PUBLIC array compiler_flags)
 target_link_libraries(corr PUBLIC array fft compiler_flags)
 
 target_link_libraries(mdcorr PUBLIC corr parse compiler_flags)

@@ -3,6 +3,7 @@
 #include <execution>
 #include <numeric>
 #include <functional>
+#include <memory>
 
 #include "array.h"
 

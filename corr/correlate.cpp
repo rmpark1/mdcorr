@@ -1,4 +1,5 @@
 #include "correlate.h"
+#include "fft.h"
 
 namespace corr {
 
@@ -17,9 +18,17 @@ void correlate_direct(A3 &in1, A3 &in2, A3 &output, int j, int k) {
 /* N log(N) implementation of correlation */
 void correlate_fft(A3 &in1, A3 &in2, A3 &output, int j, int k) {
 
-    // std::function<&double> in2_reversed = [&in2](int i, int j, int k) {
-    //     return in2(in2.h-i-1, in2.w-j-1, in2.d-k-1); };
-    
+    // Find the best padding for FFT
+    std::vector<int> primes = fft::find_ideal_size(in1.h); // assume same for in2.
+    int new_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
+
+    // Resize data
+    in1.resize_contiguous(new_size, in1.w, in1.h);
+    if (std::addressof(in1) != std::addressof(in2)) in2.resize_contiguous(new_size, in2.w, in2.d);
+
+}
+
+void autocorrelate_fft(A3 &input, A3 &output) {
 }
 
 void crosscorrelate(A3 &in1, A3 &in2, A3 &output, bool fft) {
