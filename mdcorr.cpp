@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     parse::LammpsReader data(cli.args);
 
     // Load all data into contiguous array
-    int nsteps = data.nsteps / cli.args.stride;
+    int nsteps = fmax(data.nsteps, cli.args.timesteps) / cli.args.stride;
     A3 velocities(nsteps, data.natoms, 3);
     int found = data.load(velocities);
 
