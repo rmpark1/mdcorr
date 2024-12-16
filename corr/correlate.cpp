@@ -22,9 +22,18 @@ void correlate_fft(A3 &in1, A3 &in2, A3 &output, int j, int k) {
     std::vector<int> primes = fft::find_ideal_size(in1.h); // assume same for in2.
     int new_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
 
+    // Add padding to prevent circular convolution
+    new_size = new_size * 2;
+
     // Resize data
     in1.resize_contiguous(new_size, in1.w, in1.h);
     if (std::addressof(in1) != std::addressof(in2)) in2.resize_contiguous(new_size, in2.w, in2.d);
+    output.resize_contiguous(new_size, output.w, output.h);
+
+    // Form span over data
+
+    // Run ffts
+    // fft::real_forward()
 
 }
 

@@ -2,6 +2,8 @@ compile=true
 build_dev=true
 test=true
 
+# python main.py
+
 if ${compile}; then
 
     mkdir -p build

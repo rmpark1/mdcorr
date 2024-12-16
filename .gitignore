@@ -7,5 +7,8 @@ main.py
 show.sh
 snips.cpp
 *example
+*.json
+*.bbl
+*.blg
 
 Testing

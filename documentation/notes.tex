@@ -59,7 +59,12 @@ and its inverse,
 \begin{equation}\begin{aligned}
     x_{n} = \frac{1}{N}\sum_{k=0}^{N-1} X_{k} e^{-2 \pi i k n /N}. \\
 \end{aligned}\end{equation}
-There is a corresponding discrete theorem called the circular convolution theorem.
+There is a corresponding discrete theorem called the circular convolution theorem. Because the sum is
+finite, the Fourier decomposition is periodc in $k$, and the resulting correlations of the real space
+array will include contributions between the beginning and end of the input array, as if it were
+wrapped into a ring and convolved with itself. To exclude these contributions, i.e. to compute the linear
+convolution as opposed to the circular one, the input array must be padded with zeros such that the
+wrapping does not affect length scales longer than the original input array.
 
 \section{FFT}
 The DFT can be denoted,
@@ -117,7 +122,11 @@ Thus
     R = \sum_{l=1}^{P} a_{l} \prod_{p=1}^{P} a_{p} = N \sum_{l=1}^{P} a_{l}
 \end{aligned}\end{equation}
 % kThe runtime is clearly optimized whe
-The indices respect a similar recursive relationship
+The indices respect a similar recursive relationship. Adding level indices to indicate
+location of data,
+\begin{equation}\begin{aligned}
+    \mathcal{F}_{s,n_{l}} 
+\end{aligned}\end{equation}
 \begin{equation}\begin{aligned}
     x_{n,l} = a_{l} x_{n,l} + s_{l}
 \end{aligned}\end{equation}
@@ -125,6 +134,14 @@ In explicit form,
 \begin{equation}\begin{aligned}
     x_{n,l-1} &= a_{l} x_{n, l} + s_{l} \\
     x_{n+1, l} &= \frac{x_{n_{l}} - s_{l}}{a_{l}} \\
+\end{aligned}\end{equation}
+The remapping for the last layer index should be
+\begin{equation}\begin{aligned}
+    x_{j}^{\abs{a}} \leftarrow N \p{\cancel{x_{i}}^{0}} + \sum_{p=\abs{a}-1}^{0} \p{\prod_{r=0}^{p-1} a_{r}} s_{p}\p{j}
+\end{aligned}\end{equation}
+But
+\begin{equation}\begin{aligned}
+    s_{p}\p{j} = j \mod \prod_{r=0}^{p-1} a_{r}
 \end{aligned}\end{equation}
 
 \begin{itemize}
