@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <fstream>
 
 namespace rv = std::ranges::views;
 
@@ -65,31 +66,29 @@ int test_s_access() {
 int test_base_fft() {
 
     // Start with a good size array
-    int N = 8; // complex size 2: 2
+    int size = 6;
 
-    std::vector<double> input(N);
-    for (int j = 0; j < N/2; j++) {
-        // input[j] = sin(.5*j) + cos(3.*j);
-        input[2*j] = j;
-        input[2*j+1] = 0;
+    std::vector<double> xr(size);
+    std::vector<double> xi(size);
+    std::vector<double> Xr(size);
+    std::vector<double> Xi(size);
+    std::vector<double> data(2*size);
+
+    for (int j = 0; j < size; j++) {
+        xr[j] = j; // (double) (j % 5 == 0); //  *cos(2*PI*20*j/N);
     }
-    // std::iota(input.begin(), input.end(), 0);
-    std::vector<double> output(N);
 
-    std::cout << "LAYER 0" << std::endl;
-    for (int j = 0; j < N/2; j++) { std::cout << input[2*j] << " " << input[2*j+1] << std::endl; }
-    std::cout << "\n\n"; 
-    for (int j = 0; j < N/2; j++) { std::cout << output[2*j] << " " << output[2*j+1] << std::endl; }
-    std::cout << "\n\n"; 
+    for (int j = 0; j < size; j++) {
+        data[2*j] = xr[j]; // (double) (j % 5 == 0); //  *cos(2*PI*20*j/N);
+        data[2*j+1] = xi[j];
+    }
 
-    fft::base_fft(input.begin(), output.begin(), N/2);
+    fft::complex_fft(data.begin(), size);
 
-    std::cout << "END" << std::endl;
-    for (int j = 0; j < N/2; j++) { std::cout << input[2*j] << " " << input[2*j+1] << std::endl; }
-    std::cout << "\n\n"; 
-    for (int j = 0; j < N/2; j++) { std::cout << output[2*j] << " " << output[2*j+1] << std::endl; }
-    std::cout << "\n\n"; 
-
+    for (int j = 0; j < size; j++) {
+        Xr[j] = data[2*j];
+        Xi[j] = data[2*j+1];
+    }
 
     return 0;
 }

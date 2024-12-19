@@ -33,13 +33,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Perform correlations
-    A3 correlations(nsteps, data.natoms, 3);
+    // A3 correlations(nsteps, data.natoms, 3);
 
     if (cli.args.verbose) std::cout << "Computing autocorrelation ... " << std::flush;
 
     const auto start = timer::now();
 
-    corr::autocorrelate(velocities, correlations, cli.fft);
+    corr::autocorrelate(velocities); // velocities now hold correlations
 
     const auto finish = timer::now();
     if (cli.args.verbose) {
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
     // Average
     A3 Z_sum(nsteps, 1, 1);
-    corr::reduce(correlations, Z_sum);
+    corr::reduce(velocities, Z_sum);
 
     // Write file
     data.write_array(Z_sum);

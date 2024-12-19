@@ -14,23 +14,18 @@ typedef std::span<double> span;
 
 namespace fft {
 
-template<class in_iter, class out_iter>
-void base_fft(in_iter input, out_iter output, int size, int rev=1);
+template<class Iterator>
+void complex_fft(Iterator input, int size, int rev=1, int max_prime=7);
 
 // void base_fft(span &input, span &output, int rev);
-void base_real_fft(span &input, span &output, int rev);
-
-void forward(span &input, span &output);
-void reverse(span &input, span &output);
-
-void real_forward(span &input, span &output);
-void real_reverse(span &input, span &output);
+template<class Iterator>
+void real_fft(Iterator input, int size, int rev=1, int max_prime=7);
 
 /* 
  * Increase the size until a size with prime factorization has no primes larger
  * than largetst prime. Returns the prime decomposition
  */
-std::vector<int> find_ideal_size(int N, int largest_prime=7);
+std::vector<int> find_ideal_size(int N, int largest_prime=7, int even=0);
 std::vector<int> get_prime_decomposion(int n);
 
 template<class T1, class T2, class T>
@@ -55,31 +50,53 @@ class Pair {
     }
 };
 
-template<class in_iter, class out_iter>
-void reorder(in_iter input, out_iter output, std::vector<int> primes);
+template<class Iterator>
+void reorder(Iterator arr, std::vector<int> primes);
 
-// Little endian prime encoding of an integer.
+// Little endian prime encoding of an integer. Ignore p[0] for encoding.
 class PrimeEncoding {
     std::vector<int> &base;
     std::vector<int> rep;
+    int rev;
   public:
-    Encoding(std::vector<int> &base_) : base(base_), rep(base_.size()) { };
-    
-    void operator++() {
-        int last = base.size()-1:
-        rep[last] += 1;
-        int remainder;
-        for (int j=last; j>=0; j--) {
-            int remainder = rep[j] % base[j];
+    PrimeEncoding(std::vector<int> &base_)
+        : base(base_), rep(base_.size()), rev(0) { };
+
+    int flip(int i) {
+        // Store encoding
+        int n = base.size();
+        std::vector<int> enc(n);
+        for (int j = n-1; j >= 0; j--) {
+            int remainder = i / base[j];
         }
+        return n;
+    }
+    
+    void operator++(int) {
+        rep[0]++;
+        for (int j=0; j < base.size()-1; j++) {
+            if (rep[j] != base[j+1]) return;
+            rep[j] = rep[j] % base[j+1];
+            rep[j+1]++;
+        }
+        int last = base.size()-1;
+        rep[last] = rep[last] % base[last]; // Overflow
     }
 
     // 'Bit' flip
-    void reverse() { std::reverse(rep.begin(), rep.end()); };
+    void reverse() {
+        std::reverse(rep.begin(), rep.end());
+        rev++;
+        rev = rev % 2;
+    };
 
     int eval() {
-        int sum = rep[last];
-        for (int j = last-1; j>=0; j--) { sum += base[j+1]*rep[j]; }
+        int sum = rep[0];
+        int weight = 1;
+        for (int j=1; j < base.size(); j++) {
+            weight = weight*base[j-rev];
+            sum += weight*rep[j];
+        }
         return sum;
     }
 };

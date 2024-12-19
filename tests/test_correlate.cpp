@@ -8,16 +8,27 @@ typedef array::Arr3<double> A3;
 int main() {
 
     // 1D correlation first
-    int N = 8;
+    int N = 13;
     A3 a(N,1,1);
-    A3 b(N,1,1);
 
     for (int i=0; i < N; i++) {
-        a(i,0,0) = i*.1;
+        a(i,0,0) = i;
     }
-    corr::autocorrelate(a, b, 0);
 
-    for (int i=0; i < N; i++) {
-        std::cout << b(i,0,0) << "\n";
+    for (int i : a) {
+        std::cout << i;
     }
+    std::cout << std::endl;
+
+    A3 out(N,1,1);
+    corr::crosscorrelate(a, a, out, 0);
+    for (double i : out) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+
+    corr::autocorrelate(a);
+
+    return 0;
+
 }

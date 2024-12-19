@@ -28,6 +28,13 @@ class Arr3 : public std::vector<T> {
     T &operator()(int i, int j, int k) {
         return std::vector<T>::operator[](i + j*h + k*(h*w)); }
 
+    typename std::vector<T>::iterator begin_(int j, int k) {
+        return this->begin()+j*h+k*h*w;
+    }
+    typename std::vector<T>::reverse_iterator rbegin_(int j, int k) {
+        return this->rbegin() + (h*w*d - j*h + k*h*w - h);
+    }
+
     void free() { this->clear(); }
 
     void arange() {

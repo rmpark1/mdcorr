@@ -35,6 +35,36 @@ int check_overlap(int h, int w, int d) {
     return 0;
 }
 
+int test_fill() {
+    int N = 10;
+    std::vector<int> a(N);
+    for (int j=0; j < N; j++) {
+        if (j < N/2) {
+            a[j] = j;
+        }
+    }
+
+    for (int i : a) {
+        std::cout << i;
+    }
+
+    // std::cout << std::endl;
+    //
+    // // Move 0, 1, 2, 3, ... to 0, 2, 4, 6 for complex representation
+    // for (int i = N/2; i >= 1; i--) {
+    //     // std::cout << i;
+    //     a[2*i-2] = a[i-1];
+    //     a[2*i-1] = 0.;
+    // }
+    //
+    // for (int i : a) {
+    //     std::cout << i;
+    // }
+    // std::cout << std::endl;
+
+    return 0;
+}
+
 int test_resize_change(A3 &arr, int x, int y, int z) {
     int x0 = arr.h;
     int y0 = arr.w;
@@ -90,6 +120,8 @@ int main() {
     if (check_overlap(1, 1, 100)) status = 6;
 
     if (test_resize()) status = 7;
+
+    test_fill();
 
     std::cout << status << std::endl;
     return status;
