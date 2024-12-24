@@ -11,6 +11,10 @@ if (PARALLEL)
     add_compile_definitions(-DPARALLEL PARALLEL)
 endif()
 
+if (OPT)
+    add_compile_definitions(-DOfast)
+endif()
+
 configure_file(mdcorr.h.in mdcorr.h)
 
 add_subdirectory(array)
@@ -48,6 +52,7 @@ if (BUILD_TESTING)
         test_valid_file
         test_parallel
         test_fft
+        test_read
     )
 
     foreach(TFI ${TEST_FILES})

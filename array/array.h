@@ -49,6 +49,16 @@ class Arr3 : public std::vector<T> {
         }
     }
 
+    void fill_range(int imin, int imax, T value) {
+        for (int k = 0; k < d; k++) {
+            for (int j = 0; j < w; j++) {
+                for (int i = imin; i < imax; i++) {
+                    (*this)(i, j, k) = value;
+                }
+            }
+        }
+    }
+
     void resize_contiguous(int x, int y, int z) {
 
         Arr3<T> temp(x,y,z);

@@ -1,18 +1,21 @@
 #include "parse.h"
 
 const str CLI_DOC = "Usage:\n"
-                    "mdcorr --input [INFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
+                    "mdcorr --input [LOGFILE] ... [SETTING] [VALUE] ... [FLAGS]\n\n"
                     "Settings:\n"
                     "--input, -i         The LAMMPS input file (required).\n"
                     "--directory, -d     The calculation directory LAMMPS was run in.\n"
                     "                    By default, this will be inferred from the parent\n"
                     "                    directory of the LAMMPS input file.\n"
                     "--skip, -s          Skip sum number of LAMMPS runs, i.e. skip an NVT\n"
-                    "                    part of the simulation. Default is 1.\n\n"
+                    "                    part of the simulation. Default is 1.\n"
                     "--stride, -j        Skip time steps with some stride.\n"
+                    "--steps, -t         Specify a cap on the number of time steps.\n"
+                    "--mem, -m           Specify chunk size in kB.\n"
+                    "--atoms, -c         Specify max number of atoms to average over.\n\n"
                     "Flags:\n"
-                    "--fft, -f           Use FFT implementation (on by default).\n"
                     "--verbose, -v       Print info.\n";
+                    // "--fft, -f           Use FFT implementation (on by default).\n"
 
 str os_sep =
 #ifdef _WIN32
@@ -20,6 +23,9 @@ str os_sep =
 #else
 "/";
 #endif
+
+#define MIN_SHIFT 100
+#define SHIFT_MOD 0.001
 
 namespace parse {
 
@@ -37,46 +43,178 @@ LammpsReader::LammpsReader(LammpsSettings args) :
 
     if (directory.empty()) directory = get_parent(args.input);
 
-    std::vector<std::vector<str> > tokens = search_file(args.input, "run");
+    parse_log(args);
 
-    int n_sim_steps = std::stoi(tokens[args.skip][1]);
+    // check_dump();
+
+    if (verbose) print_summary();
+}
+
+void LammpsReader::parse_log(LammpsSettings args) {
+
+    std::vector<std::vector<str> > tokens = search_file(args.input, "run");
+    int n_sim_steps = std::stoi(tokens[skip][1]);
 
     tokens = search_file(args.input, "dump");
     std::vector<str> last_dump = tokens[tokens.size()-1];
-    int dump_stride = std::stoi(last_dump[4]);
-    str dump_path = last_dump[5];
-    paths.push_back(dump_path);
+    dump_stride = std::stoi(last_dump[4]);
+    dump_path = directory+os_sep+last_dump[5];
 
     // Read number of species and number of each species
     tokens = search_file(args.input, "create_atoms");
-    int nspecies = tokens.size();
+    nspecies = tokens.size();
     natoms = 0;
-    for (auto tok : tokens) {
-        natoms += std::stoi(tok[3]);
-    }
-
+    for (auto tok : tokens) natoms += std::stoi(tok[3]);
     nsteps = (n_sim_steps / dump_stride) + 1;
-
-    if (verbose) {
-        printf("----------------\n");
-        printf("Reading LAMMPS input\n");
-        printf("----------------\n");
-        printf("Calculation directory: %s\n", directory.c_str());
-        printf("# of species: %i\n", nspecies);
-        printf("# of atoms: %i\n", natoms);
-        printf("# of simulation steps: %i\n", n_sim_steps);
-        printf("# of dump steps: %i\n", nsteps);
-        printf("LAMMPS dump stride: %i\n", dump_stride);
-        printf("# of correlation points: %i\n", nsteps/stride);
-        printf("----------------\n");
-        fflush(stdout);
-    }
 }
+
+
+void LammpsReader::print_summary() {
+
+    printf("----------------\n");
+    printf("Reading LAMMPS input\n");
+    printf("----------------\n");
+    printf("Calculation directory: %s\n", directory.c_str());
+    printf("# of species: %i\n", nspecies);
+    printf("# of atoms: %i\n", natoms);
+    printf("# of dump steps: %i\n", nsteps);
+    printf("LAMMPS dump stride: %i\n", dump_stride);
+    printf("# of correlation points: %i\n", nsteps/stride);
+    printf("----------------\n");
+    fflush(stdout);
+}
+
+std::fstream LammpsReader::get_fstream() {
+    return std::fstream(dump_path);
+}
+
+void LammpsReader::check_dump() {
+
+    // Read first header
+    std::fstream f(dump_path);
+    str line;
+    std::getline(f, line);
+
+    if (line.find(str("TIMESTEP")) == str::npos) {
+        throw std::runtime_error("Invalid dump file.");
+    }
+
+    int first_timestep, last_timestep;
+    f >> first_timestep;
+
+    // Go to the end
+    f.seekg(-1, std::ios::end);
+    char c;
+
+    unsigned long size = f.tellg();
+    size++;
+
+    auto rget = [&f, &c]{
+        f.seekg(-2, std::ios::cur);
+        c = f.get();
+    };
+
+    str check("TIMESTEP");
+
+    while (true) {
+        rget();
+        if (c == 'P') {
+            str match("");
+            for (auto l : check) {
+                match.insert(0, 1, c);
+                rget();
+            }
+            if (match == check) break;
+        }
+    }
+
+    std::getline(f, line);
+    f >> last_timestep;
+
+    int found = (last_timestep - first_timestep) / dump_stride + 1;
+
+    // If unexpected number of steps found, then copy into new array
+    if (found != nsteps) {
+        if (verbose) std::cout << "WARNING: Found less data than input specified "
+            << found << "/" << nsteps << std::endl;
+        nsteps = found;
+    }
+
+    avg_size = static_cast<double>(size)/found;
+
+}
+
+
+/* Load in a single time step of LAMMPS data. */
+void LammpsReader::load_step(A3 &velocities, int step, int min_atom, int max_atom) {
+
+    unsigned long pos = find_step(step);
+
+    std::fstream f(dump_path);
+    f.seekg(pos, std::ios::beg);
+}
+
+unsigned long LammpsReader::find_step(int step) {
+
+    std::fstream f(dump_path);
+    // Move pointer to guess, find the nearest timestep
+    double guess = static_cast<int>(avg_size*(static_cast<double>(step)/nsteps));
+    double shift = fmin(MIN_SHIFT, avg_size*SHIFT_MOD);
+    f.seekg(guess-shift, std::ios::beg);
+
+    char c;
+    auto rget = [&f, &c]{
+        f.seekg(-2, std::ios::cur);
+        c = f.get(); };
+
+    str check("TIMESTEP");
+
+    int cur_step;
+
+    unsigned long pos = f.tellg();
+
+    return pos;
+
+    // // Try forward
+    // while (true) {
+    //     rget();
+    // }
+
+    // // Try backward.
+    // f.seekg(guess-shift, std::ios::beg);
+
+    // rget();
+    // if (c == 'P') {
+    //     str match("");
+    //     for (auto l : check) {
+    //         match.insert(0, 1, c);
+    //         rget();
+    //     }
+    //     if (match == check) break;
+    // }
+
+
+}
+
 
 /**
  * Read all data in a specified directory
  */
 int LammpsReader::load(A3 &velocities) {
+
+    if(verbose) std::cout << "Reading " << dump_path << std::endl;
+    const auto start = timer::now();
+
+    // Load entire range
+    int found = load_range(velocities, 0, natoms);
+
+    const auto finish = timer::now();
+    if (verbose) std::cout << "Finished reading in "
+        << chrono::duration_cast<chrono::minutes>(finish - start) << std::endl;
+    return found;
+}
+
+int LammpsReader::load_range(A3 &velocities, int min_atom, int max_atom) {
 
     double vx, vy, vz;
     int id;
@@ -85,56 +223,46 @@ int LammpsReader::load(A3 &velocities) {
     int tstep;
     int progress;
 
-    // Open all file streams
-    for (auto &fname : paths) {
+    std::fstream file_handle(dump_path);
+    if (file_handle.fail()) {
+        throw std::invalid_argument(str("ERROR: Dump file not found -- ")+dump_path);
+    }
 
-        str full_path = directory+os_sep+fname;
-        std::fstream file_handle(full_path);
-        if (file_handle.fail()) {
-            throw std::invalid_argument(str("ERROR: Dump file not found -- ")+full_path);
-        }
-        if(verbose) std::cout << "Reading " << full_path << std::endl;
+    const auto start = timer::now();
+    std::getline(file_handle, line);
+    while (!file_handle.eof()) {
 
-        const auto start = timer::now();
-        std::getline(file_handle, line);
-        while (!file_handle.eof()) {
+        // Skip header
+        for (int i=0; i<8; i++) std::getline(file_handle, line);
 
-            for (int i=0; i<8; i++) std::getline(file_handle, line);
-
-            for (int i=0; i< natoms; i++) {
-                file_handle >> id >> vx >> vy >> vz;
-                tstep = nsteps_found/stride;
-                if ((nsteps_found % stride == 0)) {
-                    velocities(tstep, id-1, 0) = vx;
-                    velocities(tstep, id-1, 1) = vy;
-                    velocities(tstep, id-1, 2) = vz;
-                }
+        for (int i=0; i < natoms; i++) {
+            file_handle >> id >> vx >> vy >> vz;
+            tstep = nsteps_found/stride;
+            if ((nsteps_found % stride == 0)
+              & (id-1 < max_atom)
+              & (id-1 >= min_atom)
+              ) {
+                velocities(tstep, id-1-min_atom, 0) = vx;
+                velocities(tstep, id-1-min_atom, 1) = vy;
+                velocities(tstep, id-1-min_atom, 2) = vz;
             }
-            
-            nsteps_found++;
-
-            std::getline(file_handle, line);
-            std::getline(file_handle, line);
-
-            // if (verbose & (nsteps_found % 100 == 0)) {
-            //     std::cout << nsteps_found << std::endl;
-            // }
-
-            if (nsteps_found >= nsteps) break;
-            if (nsteps_found >= timesteps) break;
         }
 
-        const auto finish = timer::now();
-        if (verbose) std::cout << "Finished reading in "
-            << chrono::duration_cast<chrono::minutes>(finish - start) << std::endl;
+        
+        nsteps_found++;
 
+        std::getline(file_handle, line);
+        std::getline(file_handle, line);
+
+        // if (verbose & (nsteps_found % 100 == 0)) {
+        //     std::cout << nsteps_found << std::endl;
+        // }
+
+        if (nsteps_found >= nsteps) break;
+        if (nsteps_found >= timesteps) break;
     }
 
     return nsteps_found/stride;
-}
-
-int LammpsReader::load_range(array::Arr3<int> bounds) {
-    return 0; // NYI
 }
 
 void LammpsReader::write_array(A3 &arr, str fname) {
@@ -164,12 +292,14 @@ CLIReader::CLIReader(int argc, char *argv[]) {
 
     help = 0;
     fft = 1;
+    mem = 0;
+    max_atoms = -1;
+
 
     read_args(argc, argv);
     if (help) std::cout << CLI_DOC; return;
 
     check_input();
-
 }
 
 void CLIReader::read_args(int argc, char *argv[]) {
@@ -191,7 +321,9 @@ void CLIReader::read_args(int argc, char *argv[]) {
         if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
         if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
         if (match("--steps", "-t")) { args.timesteps = std::stoi(arg_val); remaining -= 2; }
+        if (match("--mem", "-m")) { mem = std::stoi(arg_val); remaining -= 2; }
         if (match("--fft", "-f")) { fft = std::stoi(arg_val); remaining -= 2; }
+        if (match("--atoms", "-a")) { max_atoms = std::stoi(arg_val); remaining -= 2; }
     }
 }
 

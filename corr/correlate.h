@@ -21,11 +21,14 @@ void correlate_fft(A3 &in1, A3 &in2, A3 &output, int j, int k);
 
 void crosscorrelate(A3 &in1, A3 &in2, A3 &output, bool fft=false);
 
-void autocorrelate(A3 &input);
+void autocorrelate(A3 &input, int resize=1);
 void autocorrelate_1D(d_it left, r_it right, int size);
 
 /* Average over particle and directional dimensions. */
+void average(A3 &input, A3 &output);
 void reduce(A3 &input, A3 &output);
+void to_complex_fmt(A3 &data, int size);
+void to_real_fmt(A3 &data, int size);
 
 }
 

@@ -2,7 +2,6 @@
 #include "fft.h"
 
 
-
 namespace corr {
 
 /* N^2 implemetation of correlation */
@@ -17,27 +16,9 @@ void correlate_direct(A3 &in1, A3 &in2, A3 &output, int j, int k) {
     }
 }
 
-/* N log(N) implementation of correlation */
+/* Nlog(N) implementation of correlation */
 void correlate_fft(A3 &in1, A3 &in2, A3 &output, int j, int k) {
-
-    // Find the best padding for FFT
-    std::vector<int> primes = fft::find_ideal_size(in1.h); // assume same for in2.
-    int new_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
-
-    // Add padding to prevent circular convolution
-    new_size = new_size * 2;
-
-    // Resize data
-    in1.resize_contiguous(new_size, in1.w, in1.h);
-    if (std::addressof(in1) != std::addressof(in2)) {
-        in2.resize_contiguous(new_size, in2.w, in2.d);
-    }
-    output.resize_contiguous(new_size, output.w, output.h);
-
-    // Form span over data
-
-    // Run ffts
-    // fft::real_forward()
+    // NYI
 }
 
 void crosscorrelate(A3 &in1, A3 &in2, A3 &output, bool fft) {
@@ -80,30 +61,23 @@ void autocorrelate_1D(d_it x, int size) {
     fft::complex_fft(x, size, -1);
 };
 
-void autocorrelate(A3 &data) {
+void autocorrelate(A3 &data, int resize) {
 
     // Double array once for 0 padding and once for complex representation (for now)
     int size = data.h; // Size without padding
+    if (!resize) size = size/4; // with padding
 
     // Find the best padding for FFT
     std::vector<int> primes = fft::find_ideal_size(2*size, 2, 1); // For now, only base 2
     int fft_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
 
-    data.resize_contiguous(2*fft_size, data.w, data.d);
-
-    std::cout << std::endl;
+    if (resize) data.resize_contiguous(2*fft_size, data.w, data.d);
 
     // Move 0, 1, 2, 3, ... to 0, 2, 4, 6 for complex representation.
     // Leave right hand side filled with 0s.
-    for (int k = 0; k < data.d; k++) {
-        for (int j = 0; j < data.w; j++) {
-            for (int i = fft_size/2; i >= 1; i--) {
-                data(2*i-2, j, k) = data(i-1, j, k);
-                data(2*i-1, j, k) = 0.;
-            }
-        }
-    }
+    to_complex_fmt(data, fft_size/2);
 
+    // Pass in 1D time series arrays for each atom, spatial dimnesion.
     for (int k=0; k < data.d; k++) {
 
         std::vector<int> atom_loop(data.w);
@@ -122,31 +96,24 @@ void autocorrelate(A3 &data) {
             #endif
             atom_loop.begin(), atom_loop.end(), correlate_1D);
     }
-
-
+        
     // Undo move,
+    to_real_fmt(data, size);
+
+    if (resize) data.resize_contiguous(size, data.w, data.d);
+
+    // Scale
     for (int k = 0; k < data.d; k++) {
         for (int j = 0; j < data.w; j++) {
-            for (int i = 0; i < size; i++) {
-                data(i, j, k) = data(2*i, j, k);
-            }
-        }
-    }
-
-    data.resize_contiguous(size, data.w, data.d);
-
-    for (int k = 0; k < data.d; k++) {
-        for (int j = 0; j < data.w; j++) {
-            for (int i = 0; i < size; i++) {
-                data(i, j, k) = data(i, j, k)/(size-i);
+            for (int i = 0; i < data.h; i++) {
+                if (i < size) data(i, j, k) = data(i, j, k)/(size-i);
+                else data(i,j,k) = 0.0;
             }
         }
     }
 }
 
-
-void reduce(A3 &input, A3 &output) {
-
+void average(A3 &input, A3 &output) {
     double sum; 
 
     for (int i = 0; i < input.h; i++) {
@@ -159,5 +126,41 @@ void reduce(A3 &input, A3 &output) {
         output(i,0,0) = sum / (input.w * input.d);
     }
 }
+
+void reduce(A3 &input, A3 &output) {
+    double sum; 
+
+    for (int i = 0; i < output.h; i++) {
+        sum = 0;
+        for (int j=0; j < input.w; j++) {
+            for (int k=0; k < input.d; k++) {
+                sum += input(i,j,k);
+            }
+        }
+        output(i,0,0) += sum;
+    }
+}
+
+void to_complex_fmt(A3 &data, int size) {
+    for (int k = 0; k < data.d; k++) {
+        for (int j = 0; j < data.w; j++) {
+            for (int i = size; i >= 1; i--) {
+                data(2*i-2, j, k) = data(i-1, j, k);
+                data(2*i-1, j, k) = 0.;
+            }
+        }
+    }
+}
+
+void to_real_fmt(A3 &data, int size) {
+    for (int k = 0; k < data.d; k++) {
+        for (int j = 0; j < data.w; j++) {
+            for (int i = 0; i < size; i++) {
+                data(i, j, k) = data(2*i, j, k);
+            }
+        }
+    }
+}
+
 
 }

@@ -1,8 +1,7 @@
 compile=true
 build_dev=true
 test=true
-
-# python main.py
+oflags=false
 
 if ${compile}; then
 
@@ -16,6 +15,10 @@ if ${compile}; then
             -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" \
             ..
             # -D PARALLEL=TRUE \
+    elif ${oflags}; then
+        cmake -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" \
+              -D OPT=TRUE \
+              ..
     else
         cmake -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" ..
     fi
@@ -31,5 +34,3 @@ if ${test}; then
     ctest --rerun-failed --output-on-failure
     cd ..
 fi
-
-# || Computing autocorrelation ... finished in 21s

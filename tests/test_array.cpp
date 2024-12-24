@@ -80,9 +80,9 @@ int test_resize_change(A3 &arr, int x, int y, int z) {
 
     arr.resize_contiguous(x, y, z);
 
-    for (int i=0; i < fmin(x0, x); i++) {
-        for (int j=0; j < fmin(y0, y); j++) {
-            for (int k=0; k < fmin(z0, z); k++) {
+    for (int i=0; i < std::min(x0, x); i++) {
+        for (int j=0; j < std::min(y0, y); j++) {
+            for (int k=0; k < std::min(z0, z); k++) {
                 str s = std::to_string(i) + std::to_string(j) + std::to_string(k);
                 if (arr(i,j,k) != (double)std::stoi(s)) return 1;
             }

@@ -28,48 +28,41 @@ void real_fft(Iterator input, int size, int rev=1, int max_prime=7);
 std::vector<int> find_ideal_size(int N, int largest_prime=7, int even=0);
 std::vector<int> get_prime_decomposion(int n);
 
-template<class T1, class T2, class T>
-class Pair {
-
-    T1 first;
-    T2 second;
-
-  public:
-
-    Pair(T1 first, T2 second)
-        : first(first), second(second) { };
-
-    T &operator()(int i, int j) {
-        if (i % 2 == 0) { return first[j]; }
-        else { return second[j]; }
-    }
-
-    T operator()(int i, int j) const {
-        if (i % 2 == 0) { return first[j]; }
-        else { return second[j]; }
-    }
-};
-
 template<class Iterator>
 void reorder(Iterator arr, std::vector<int> primes);
 
-// Little endian prime encoding of an integer. Ignore p[0] for encoding.
+// Little endian prime encoding of an integer. Ignore p[0] for reverse encoding,
+// and p[-1] forward encoding.
 class PrimeEncoding {
     std::vector<int> &base;
     std::vector<int> rep;
     int rev;
+    std::vector<int> A0; // Cumulative products
+    std::vector<int> A1;
   public:
     PrimeEncoding(std::vector<int> &base_)
-        : base(base_), rep(base_.size()), rev(0) { };
+        : base(base_), rep(base_.size()), rev(0) { 
 
-    int flip(int i) {
-        // Store encoding
+        // std::inclusive_scan(base.begin(), base.end()-1, A0, 1, std::multiplies<int>());
+        // std::inclusive_scan(base.begin()+1, base.end(), A1, 1, std::multiplies<int>());
+
+    };
+
+    int flip(int k) {
+        // Represent forward encoding
         int n = base.size();
-        std::vector<int> enc(n);
-        for (int j = n-1; j >= 0; j--) {
-            int remainder = i / base[j];
+
+        for (; k >= 0; k--) {
         }
-        return n;
+
+        // for (int j=0; j < base.size()-1; j++) {
+        //     if (rep[j] != base[j+1]) return;
+        //     rep[j] = rep[j] % base[j+1];
+        //     rep[j+1]++;
+        // }
+        // int last = base.size()-1;
+        // rep[last] = rep[last] % base[last]; // Overflow
+        return k;
     }
     
     void operator++(int) {

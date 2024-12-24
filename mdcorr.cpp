@@ -3,6 +3,7 @@
 
 #include "parse.h"
 #include "array.h"
+#include "fft.h"
 #include "correlate.h"
 
 #include "c_api.cpp"
@@ -10,30 +11,13 @@
 namespace chrono = std::chrono;
 typedef chrono::steady_clock timer;
 
-int main(int argc, char *argv[]) {
-
-    // Parse user input
-    parse::CLIReader cli(argc, argv);
-    if (cli.help) return 0;
-
-    // Parse LAMMPS input
-    parse::LammpsReader data(cli.args);
+void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 
     // Load all data into contiguous array
-    int nsteps = fmin(data.nsteps, cli.args.timesteps) / cli.args.stride;
+    int nsteps = std::min(static_cast<unsigned int>(data.nsteps),
+                          data.timesteps) / cli.args.stride;
     A3 velocities(nsteps, data.natoms, 3);
     int found = data.load(velocities);
-
-    // If unexpected number of steps found, then copy into new array
-    if (found != nsteps) {
-        if (cli.args.verbose) std::cout << "WARNING: Found less data than input specified "
-            << found << "/" << nsteps << std::endl;
-        nsteps = found;
-        velocities.resize_contiguous(found, data.natoms, 3);
-    }
-
-    // Perform correlations
-    // A3 correlations(nsteps, data.natoms, 3);
 
     if (cli.args.verbose) std::cout << "Computing autocorrelation ... " << std::flush;
 
@@ -49,10 +33,86 @@ int main(int argc, char *argv[]) {
 
     // Average
     A3 Z_sum(nsteps, 1, 1);
-    corr::reduce(velocities, Z_sum);
+    corr::average(velocities, Z_sum);
 
     // Write file
     data.write_array(Z_sum);
+}
+
+void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
+
+    int nsteps = std::min(static_cast<unsigned int>(data.nsteps),
+                          data.timesteps) / cli.args.stride;
+
+    // Get actual size from null readout
+    A3 velocities(nsteps,1,1);
+    nsteps = data.load_range(velocities, 0, 1);
+    printf("Found %d time steps\n", nsteps);
+    fflush(stdout);
+
+    int array_size = cli.mem*pow(2,20)/(4*sizeof(double));
+    int natoms = std::min(cli.max_atoms, static_cast<unsigned int>(data.natoms));
+    int chunk = std::min(natoms, array_size / (nsteps*3));
+    int nchunks = std::ceil(static_cast<double>(natoms) / chunk);
+
+    // One array for all chunks. Use ffts - need 4x space (for now)
+    std::vector<int> primes = fft::find_ideal_size(2*nsteps, 2, 1); // For now, only base 2
+    int fft_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
+
+    velocities.resize_contiguous(2*fft_size, chunk, 3);
+    A3 Z_sum(nsteps, 1, 1);
+    nsteps = fft_size/2;
+
+    if (cli.args.verbose) std::cout << "Start chunk loading for "
+        << nchunks << " chunks" << std::endl;
+    for (int n=0; n<nchunks; n++) {
+
+        int chunk_size = chunk;
+        if (n == nchunks-1) {
+            chunk_size = natoms-n*chunk;
+            velocities.resize_contiguous(2*fft_size, chunk_size, 3);
+        }
+
+        const auto start = timer::now();
+
+        data.load_range(velocities, n*chunk, n*chunk+chunk_size);
+
+        corr::autocorrelate(velocities, 0); // velocities now hold correlations
+
+        const auto finish = timer::now();
+
+        switch (cli.args.verbose) {
+            case 1:
+                std::cout << n+1 << "/" << nchunks << " finished in "
+                << chrono::duration_cast<chrono::seconds>(finish - start) << std::endl;
+            default: {}
+        }
+
+        // Average
+        corr::reduce(velocities, Z_sum);
+    }
+
+    // Divide over natoms
+    for (int i = 0; i < Z_sum.h; i++) {
+        Z_sum[i] = Z_sum[i] / (natoms * 3);
+    }
+
+    // Write file
+    data.write_array(Z_sum);
+}
+
+int main(int argc, char *argv[]) {
+
+
+    // Parse user input
+    parse::CLIReader cli(argc, argv2);
+    if (cli.help) return 0;
+
+    // Parse LAMMPS input
+    parse::LammpsReader data(cli.args);
+
+    if (cli.mem == 0) full_autocorr(cli, data);
+    else chunk_autocorr(cli, data);
 
     return 0;
 }

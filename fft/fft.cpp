@@ -2,7 +2,6 @@
 
 namespace fft {
 
-
 /*
  * fft implementation for forward and reverse. Interpret the input array
  * as a complex vector with half the size. Even components are real and
