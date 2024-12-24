@@ -6,8 +6,6 @@
 #include "fft.h"
 #include "correlate.h"
 
-#include "c_api.cpp"
-
 namespace chrono = std::chrono;
 typedef chrono::steady_clock timer;
 
@@ -105,7 +103,7 @@ int main(int argc, char *argv[]) {
 
 
     // Parse user input
-    parse::CLIReader cli(argc, argv2);
+    parse::CLIReader cli(argc, argv);
     if (cli.help) return 0;
 
     // Parse LAMMPS input
