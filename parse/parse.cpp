@@ -59,6 +59,7 @@ void LammpsReader::parse_log(LammpsSettings args) {
     std::vector<str> last_dump = tokens[tokens.size()-1];
     dump_stride = std::stoi(last_dump[4]);
     dump_path = directory+os_sep+last_dump[5];
+    build_col_map(last_dump);
 
     // Read number of species and number of each species
     tokens = search_file(args.input, "create_atoms");
@@ -68,6 +69,21 @@ void LammpsReader::parse_log(LammpsSettings args) {
     nsteps = (n_sim_steps / dump_stride) + 1;
 }
 
+/* Determine the ordering of x,y,z,vx,vy,vz in Lammps dump file
+ * id must come first! */
+void LammpsReader::build_col_map(std::vector<str> line) {
+
+    if (line[6] != "id") {
+        throw std::runtime_error("atom id must be first attribute in dump file");
+    }
+
+    std::map<str,int> ordering{
+        {"x", 0}, {"y", 1}, {"z", 2},
+        {"vx", 3}, {"vy", 4}, {"vz", 5} };
+    for (int i=7; i < line.size(); i++) {
+        col_map.push_back(ordering[line[i]]);
+    }
+}
 
 void LammpsReader::print_summary() {
 
@@ -82,10 +98,6 @@ void LammpsReader::print_summary() {
     printf("# of correlation points: %i\n", nsteps/stride);
     printf("----------------\n");
     fflush(stdout);
-}
-
-std::fstream LammpsReader::get_fstream() {
-    return std::fstream(dump_path);
 }
 
 void LammpsReader::check_dump() {
@@ -173,8 +185,6 @@ unsigned long LammpsReader::find_step(int step) {
 
     unsigned long pos = f.tellg();
 
-    return pos;
-
     // // Try forward
     // while (true) {
     //     rget();
@@ -193,7 +203,7 @@ unsigned long LammpsReader::find_step(int step) {
     //     if (match == check) break;
     // }
 
-
+    return pos;
 }
 
 
@@ -216,12 +226,11 @@ int LammpsReader::load(A3 &velocities) {
 
 int LammpsReader::load_range(A3 &velocities, int min_atom, int max_atom) {
 
-    double vx, vy, vz;
     int id;
     str line;
     int nsteps_found = 0;
     int tstep;
-    int progress;
+    bool rem;
 
     std::fstream file_handle(dump_path);
     if (file_handle.fail()) {
@@ -232,26 +241,27 @@ int LammpsReader::load_range(A3 &velocities, int min_atom, int max_atom) {
     std::getline(file_handle, line);
     while (!file_handle.eof()) {
 
+        tstep = nsteps_found/stride;
+        rem = nsteps_found % stride == 0;
+
         // Skip header
         for (int i=0; i<8; i++) std::getline(file_handle, line);
 
         for (int i=0; i < natoms; i++) {
-            file_handle >> id >> vx >> vy >> vz;
-            tstep = nsteps_found/stride;
-            if ((nsteps_found % stride == 0)
-              & (id-1 < max_atom)
-              & (id-1 >= min_atom)
-              ) {
-                velocities(tstep, id-1-min_atom, 0) = vx;
-                velocities(tstep, id-1-min_atom, 1) = vy;
-                velocities(tstep, id-1-min_atom, 2) = vz;
+            // Read columns
+            file_handle >> id;
+            if ((rem) & (id-1 < max_atom) & (id-1 >= min_atom)) {
+                for (int j=0; j < col_map.size(); j++) {
+                    double val;
+                    file_handle >> val;
+                    int ax_id = col_map[j];
+                    if (ax_id >= 3) velocities(tstep, id-1-min_atom, ax_id-3) = val;
+                }
             }
+            std::getline(file_handle, line);
         }
-
         
         nsteps_found++;
-
-        std::getline(file_handle, line);
         std::getline(file_handle, line);
 
         // if (verbose & (nsteps_found % 100 == 0)) {
@@ -264,6 +274,37 @@ int LammpsReader::load_range(A3 &velocities, int min_atom, int max_atom) {
 
     return nsteps_found/stride;
 }
+
+int LammpsReader::check_steps() {
+
+    str line;
+    int nsteps_found = 0;
+
+    std::fstream file_handle(dump_path);
+    if (file_handle.fail()) {
+        throw std::invalid_argument(str("ERROR: Dump file not found -- ")+dump_path);
+    }
+
+    const auto start = timer::now();
+    std::getline(file_handle, line);
+    while (!file_handle.eof()) {
+
+        // Skip header
+        for (int i=0; i<8; i++) std::getline(file_handle, line);
+        for (int i=0; i < natoms; i++) { std::getline(file_handle, line); }
+        
+        std::getline(file_handle, line);
+        std::getline(file_handle, line);
+
+        nsteps_found++;
+
+        if (nsteps_found >= nsteps) break;
+        if (nsteps_found >= timesteps) break;
+    }
+
+    return nsteps_found/stride;
+}
+
 
 void LammpsReader::write_array(A3 &arr, str fname) {
 

@@ -50,6 +50,8 @@ class LammpsReader {
 
     str dump_path;
     int avg_size;
+    std::vector<int> col_map;
+
     // Data dimensions
     int nspecies;
     int natoms;
@@ -60,7 +62,7 @@ class LammpsReader {
 
     void parse_log(LammpsSettings args);
     void print_summary();
-    std::fstream get_fstream();
+    void build_col_map(std::vector<str> line);
     void check_dump();
 
     // Load all the data, careful for large files.
@@ -70,6 +72,9 @@ class LammpsReader {
 
     void load_step(A3 &velocities, int step, int min_atom=0, int max_atom=IINFINITY);
     unsigned long find_step(int step);
+
+    int check_steps();
+
 
     void write_array(A3 &arr, str fname=str("correlations.dat"));
 

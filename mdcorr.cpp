@@ -43,8 +43,8 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
                           data.timesteps) / cli.args.stride;
 
     // Get actual size from null readout
-    A3 velocities(nsteps,1,1);
-    nsteps = data.load_range(velocities, 0, 1);
+    nsteps = data.check_steps();
+
     printf("Found %d time steps\n", nsteps);
     fflush(stdout);
 
@@ -57,7 +57,7 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
     std::vector<int> primes = fft::find_ideal_size(2*nsteps, 2, 1); // For now, only base 2
     int fft_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
 
-    velocities.resize_contiguous(2*fft_size, chunk, 3);
+    A3 velocities(2*fft_size, chunk, 3);
     A3 Z_sum(nsteps, 1, 1);
     nsteps = fft_size/2;
 
@@ -68,7 +68,7 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
         int chunk_size = chunk;
         if (n == nchunks-1) {
             chunk_size = natoms-n*chunk;
-            velocities.resize_contiguous(2*fft_size, chunk_size, 3);
+            // velocities.resize_contiguous(2*fft_size, chunk_size, 3);
         }
 
         const auto start = timer::now();
@@ -102,8 +102,23 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 int main(int argc, char *argv[]) {
 
 
+    argc = 10;
+    char *argv2[] = {
+        (char*)"mdcorr",
+        (char*)"--input",
+        (char*)"data/1117dl_short.in",
+        (char*)"--verbose",
+        (char*)"--mem",
+        (char*)"1000",
+        (char*)"--atoms",
+        (char*)"100",
+        (char*)"--steps",
+        (char*)"500",
+        NULL
+    };
+
     // Parse user input
-    parse::CLIReader cli(argc, argv);
+    parse::CLIReader cli(argc, argv2);
     if (cli.help) return 0;
 
     // Parse LAMMPS input
