@@ -94,6 +94,8 @@ int test_resize_change(A3 &arr, int x, int y, int z) {
 int test_resize() {
 
     int status = 0;
+    A3 b(4, 4, 3);
+    if (test_resize_change(b, 16, 4, 3)) status = 1;
     A3 a(2, 3, 1);
     if (test_resize_change(a, 4, 2, 2)) status = 1;
     if (test_resize_change(a, 3, 4, 2)) status = 1;

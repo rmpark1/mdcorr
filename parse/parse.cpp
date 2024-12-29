@@ -12,10 +12,10 @@ const str CLI_DOC = "Usage:\n"
                     "--stride, -j        Skip time steps with some stride.\n"
                     "--steps, -t         Specify a cap on the number of time steps.\n"
                     "--mem, -m           Specify chunk size in kB.\n"
-                    "--atoms, -c         Specify max number of atoms to average over.\n\n"
+                    "--atoms, -c         Specify max number of atoms to average over.\n"
+                    "--output, -o        Specify output file name.\n\n"
                     "Flags:\n"
                     "--verbose, -v       Print info.\n";
-                    // "--fft, -f           Use FFT implementation (on by default).\n"
 
 str os_sep =
 #ifdef _WIN32
@@ -206,17 +206,16 @@ unsigned long LammpsReader::find_step(int step) {
     return pos;
 }
 
-
 /**
  * Read all data in a specified directory
  */
-int LammpsReader::load(A3 &velocities) {
+int LammpsReader::load(A3 &velocities, int atoms) {
 
     if(verbose) std::cout << "Reading " << dump_path << std::endl;
     const auto start = timer::now();
 
     // Load entire range
-    int found = load_range(velocities, 0, natoms);
+    int found = load_range(velocities, 0, atoms);
 
     const auto finish = timer::now();
     if (verbose) std::cout << "Finished reading in "
@@ -333,9 +332,9 @@ CLIReader::CLIReader(int argc, char *argv[]) {
 
     help = 0;
     fft = 1;
-    mem = 0;
+    mem = 0.0;
     max_atoms = -1;
-
+    output = str("correlations.dat");
 
     read_args(argc, argv);
     if (help) std::cout << CLI_DOC; return;
@@ -362,9 +361,10 @@ void CLIReader::read_args(int argc, char *argv[]) {
         if (match("--skip", "-s")) { args.skip = std::stoi(arg_val); remaining -= 2; }
         if (match("--stride", "-j")) { args.stride = std::stoi(arg_val); remaining -= 2; }
         if (match("--steps", "-t")) { args.timesteps = std::stoi(arg_val); remaining -= 2; }
-        if (match("--mem", "-m")) { mem = std::stoi(arg_val); remaining -= 2; }
+        if (match("--mem", "-m")) { mem = std::stof(arg_val); remaining -= 2; }
         if (match("--fft", "-f")) { fft = std::stoi(arg_val); remaining -= 2; }
         if (match("--atoms", "-a")) { max_atoms = std::stoi(arg_val); remaining -= 2; }
+        if (match("--output", "-o")) { output = str(arg_val); remaining -= 2; }
     }
 }
 

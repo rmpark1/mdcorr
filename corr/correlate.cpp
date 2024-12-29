@@ -97,33 +97,25 @@ void autocorrelate(A3 &data, int resize) {
             atom_loop.begin(), atom_loop.end(), correlate_1D);
     }
         
+
     // Undo move,
     to_real_fmt(data, size);
 
     if (resize) data.resize_contiguous(size, data.w, data.d);
 
-    // Scale
-    for (int k = 0; k < data.d; k++) {
-        for (int j = 0; j < data.w; j++) {
-            for (int i = 0; i < data.h; i++) {
-                if (i < size) data(i, j, k) = data(i, j, k)/(size-i);
-                else data(i,j,k) = 0.0;
-            }
-        }
-    }
 }
 
 void average(A3 &input, A3 &output) {
     double sum; 
 
-    for (int i = 0; i < input.h; i++) {
+    for (int i = 0; i < output.h; i++) {
         sum = 0;
         for (int j=0; j < input.w; j++) {
             for (int k=0; k < input.d; k++) {
                 sum += input(i,j,k);
             }
         }
-        output(i,0,0) = sum / (input.w * input.d);
+        output(i,0,0) = sum / (input.w * input.d * (output.h-i));
     }
 }
 

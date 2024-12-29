@@ -70,6 +70,7 @@ void complex_fft(Iterator arr, int size, int rev, int max_prime) {
         }
     }
 }
+
 // Go operate forward on vector or in reverse.
 template void complex_fft(std::vector<double>::iterator, int, int, int);
 template void complex_fft(std::vector<double>::reverse_iterator, int, int, int);

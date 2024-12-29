@@ -66,7 +66,7 @@ class LammpsReader {
     void check_dump();
 
     // Load all the data, careful for large files.
-    int load(A3 &velocities);
+    int load(A3 &velocities, int atoms);
     // Load subset of the data
     int load_range(A3 &velocities, int min_atom, int max_atom);
 
@@ -74,7 +74,6 @@ class LammpsReader {
     unsigned long find_step(int step);
 
     int check_steps();
-
 
     void write_array(A3 &arr, str fname=str("correlations.dat"));
 
@@ -87,9 +86,10 @@ class CLIReader {
   public:
     LammpsSettings args;
     int help;
-    int mem;
+    double mem;
     bool fft;
     unsigned int max_atoms;
+    str output;
 
     CLIReader(int argc, char *argv[]);
     void read_args(int argc, char *argv[]);

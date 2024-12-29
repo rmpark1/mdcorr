@@ -12,16 +12,21 @@ typedef chrono::steady_clock timer;
 void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 
     // Load all data into contiguous array
-    int nsteps = std::min(static_cast<unsigned int>(data.nsteps),
-                          data.timesteps) / cli.args.stride;
-    A3 velocities(nsteps, data.natoms, 3);
-    int found = data.load(velocities);
+    int nsteps = data.check_steps();
+    int natoms = std::min(cli.max_atoms, static_cast<unsigned int>(data.natoms));
+
+    A3 velocities(nsteps, natoms, 3);
+
+    data.load(velocities, natoms);
+
+    printf("Found %d time steps\n", nsteps);
+    fflush(stdout);
 
     if (cli.args.verbose) std::cout << "Computing autocorrelation ... " << std::flush;
 
     const auto start = timer::now();
 
-    corr::autocorrelate(velocities); // velocities now hold correlations
+    corr::autocorrelate(velocities, 1); // velocities now hold correlations
 
     const auto finish = timer::now();
     if (cli.args.verbose) {
@@ -31,19 +36,17 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 
     // Average
     A3 Z_sum(nsteps, 1, 1);
+
     corr::average(velocities, Z_sum);
 
     // Write file
-    data.write_array(Z_sum);
+    data.write_array(Z_sum, cli.output);
 }
 
 void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
-    int nsteps = std::min(static_cast<unsigned int>(data.nsteps),
-                          data.timesteps) / cli.args.stride;
-
     // Get actual size from null readout
-    nsteps = data.check_steps();
+    int nsteps =  data.check_steps();
 
     printf("Found %d time steps\n", nsteps);
     fflush(stdout);
@@ -59,7 +62,6 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
     A3 velocities(2*fft_size, chunk, 3);
     A3 Z_sum(nsteps, 1, 1);
-    nsteps = fft_size/2;
 
     if (cli.args.verbose) std::cout << "Start chunk loading for "
         << nchunks << " chunks" << std::endl;
@@ -88,37 +90,26 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
         // Average
         corr::reduce(velocities, Z_sum);
+
+        if (n < nchunks-1) {
+            velocities.fill_range(0, velocities.h, 0.0);
+        }
     }
+
 
     // Divide over natoms
     for (int i = 0; i < Z_sum.h; i++) {
-        Z_sum[i] = Z_sum[i] / (natoms * 3);
+        Z_sum[i] = Z_sum[i] / (natoms * 3 * (nsteps-i));
     }
 
     // Write file
-    data.write_array(Z_sum);
+    data.write_array(Z_sum, cli.output);
 }
 
 int main(int argc, char *argv[]) {
 
-
-    argc = 10;
-    char *argv2[] = {
-        (char*)"mdcorr",
-        (char*)"--input",
-        (char*)"data/1117dl_short.in",
-        (char*)"--verbose",
-        (char*)"--mem",
-        (char*)"1000",
-        (char*)"--atoms",
-        (char*)"100",
-        (char*)"--steps",
-        (char*)"500",
-        NULL
-    };
-
     // Parse user input
-    parse::CLIReader cli(argc, argv2);
+    parse::CLIReader cli(argc, argv);
     if (cli.help) return 0;
 
     // Parse LAMMPS input
