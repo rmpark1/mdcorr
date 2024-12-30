@@ -26,7 +26,11 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 
     const auto start = timer::now();
 
-    corr::autocorrelate(velocities, 1); // velocities now hold correlations
+    if (cli.direct) {
+        corr::autocorrelate_direct(velocities); // velocities now hold correlations
+    } else {
+        corr::autocorrelate(velocities, 1); // velocities now hold correlations
+    }
 
     const auto finish = timer::now();
     if (cli.args.verbose) {

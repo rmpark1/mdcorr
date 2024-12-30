@@ -15,7 +15,8 @@ const str CLI_DOC = "Usage:\n"
                     "--atoms, -c         Specify max number of atoms to average over.\n"
                     "--output, -o        Specify output file name.\n\n"
                     "Flags:\n"
-                    "--verbose, -v       Print info.\n";
+                    "--verbose, -v       Print info.\n"
+                    "--direct, -D        Use direct (no fft) method. Not compatible with mem.\n";
 
 str os_sep =
 #ifdef _WIN32
@@ -185,24 +186,6 @@ unsigned long LammpsReader::find_step(int step) {
 
     unsigned long pos = f.tellg();
 
-    // // Try forward
-    // while (true) {
-    //     rget();
-    // }
-
-    // // Try backward.
-    // f.seekg(guess-shift, std::ios::beg);
-
-    // rget();
-    // if (c == 'P') {
-    //     str match("");
-    //     for (auto l : check) {
-    //         match.insert(0, 1, c);
-    //         rget();
-    //     }
-    //     if (match == check) break;
-    // }
-
     return pos;
 }
 
@@ -332,6 +315,7 @@ CLIReader::CLIReader(int argc, char *argv[]) {
 
     help = 0;
     fft = 1;
+    direct = 0;
     mem = 0.0;
     max_atoms = -1;
     output = str("correlations.dat");
@@ -353,6 +337,7 @@ void CLIReader::read_args(int argc, char *argv[]) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
+        if (match("--direct", "-v")) { direct = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);

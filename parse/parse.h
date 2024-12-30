@@ -88,6 +88,7 @@ class CLIReader {
     int help;
     double mem;
     bool fft;
+    bool direct;
     unsigned int max_atoms;
     str output;
 

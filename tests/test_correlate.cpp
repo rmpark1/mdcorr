@@ -21,7 +21,7 @@ int main() {
     std::cout << std::endl;
 
     A3 out(N,1,1);
-    corr::crosscorrelate(a, a, out, 0);
+    corr::autocorrelate_direct(a);
     for (double i : out) {
         std::cout << i << " ";
     }
