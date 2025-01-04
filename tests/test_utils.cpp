@@ -1,8 +1,8 @@
 #include "parse.h"
 
 
-
 int test_get_parent() {
+
     int status = 0;
 
     str path, parent;
@@ -16,7 +16,7 @@ int test_get_parent() {
         "file", ".",
     };
 
-    for (int i=0; i<path_tests.size(); i+=2) {
+    for (size_t i=0; i<path_tests.size(); i+=2) {
         parent = parse::get_parent(path_tests[i]);
         if (parent != path_tests[i+1]) status++;
         std::cout << path_tests[i+1] << "<<\n";
@@ -27,8 +27,6 @@ int test_get_parent() {
 
     return status;
 }
-
-
 
 
 int main() {

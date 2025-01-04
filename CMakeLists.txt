@@ -10,10 +10,13 @@ target_compile_features(compiler_flags INTERFACE cxx_std_20)
 if (PARALLEL)
     add_compile_definitions(-DPARALLEL PARALLEL)
 endif()
-
 if (OPT)
     add_compile_definitions(-DOfast)
 endif()
+if (DEV)
+    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
+
 
 configure_file(mdcorr.h.in mdcorr.h)
 

@@ -18,6 +18,6 @@ int main() {
     try { parse::LammpsReader input(cli.args); }
     catch (std::invalid_argument const& ex) {}
 
-    return 0;
+    return status;
 }
 

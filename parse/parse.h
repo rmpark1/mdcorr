@@ -21,16 +21,18 @@ typedef chrono::steady_clock timer;
 typedef array::Arr3<double> A3;
 typedef std::string str;
 
-#define IINFINITY std::numeric_limits<int>::max()
+typedef std::size_t size_t;
+
+#define IINFINITY std::numeric_limits<size_t>::max()
 
 namespace parse {
 
 struct LammpsSettings {
     str directory;
     str input;
-    int skip;
-    int stride;
-    unsigned int timesteps;
+    size_t skip;
+    size_t stride;
+    size_t timesteps;
     bool verbose;
 };
 
@@ -43,20 +45,19 @@ class LammpsReader {
   public:
     str directory;
     bool verbose;
-    int skip;
-    int stride; // Stride for this reader
-    int dump_stride; // Stride for lammps output 
-    unsigned int timesteps;
+    size_t skip;
+    size_t stride; // Stride for this reader
+    size_t dump_stride; // Stride for lammps output 
+    size_t timesteps;
 
     str dump_path;
-    int avg_size;
-    std::vector<int> col_map;
+    size_t avg_size;
+    std::vector<uns> col_map;
 
     // Data dimensions
-    int nspecies;
-    int natoms;
-    int nsteps;
-    int nloaded;
+    size_t nspecies;
+    size_t natoms;
+    size_t nsteps;
 
     LammpsReader(LammpsSettings args);
 
@@ -66,14 +67,14 @@ class LammpsReader {
     void check_dump();
 
     // Load all the data, careful for large files.
-    int load(A3 &velocities, int atoms);
+    size_t load(A3 &velocities, size_t atoms);
     // Load subset of the data
-    int load_range(A3 &velocities, int min_atom, int max_atom);
+    size_t load_range(A3 &velocities, size_t min_atom, size_t max_atom);
 
-    void load_step(A3 &velocities, int step, int min_atom=0, int max_atom=IINFINITY);
-    unsigned long find_step(int step);
+    void load_step(A3 &velocities, size_t step, size_t min_atom=0, size_t max_atom=IINFINITY);
+    size_t find_step(size_t step);
 
-    int check_steps();
+    size_t check_steps();
 
     void write_array(A3 &arr, str fname=str("correlations.dat"));
 
@@ -85,11 +86,11 @@ class CLIReader {
     
   public:
     LammpsSettings args;
-    int help;
+    bool help;
     double mem;
     bool fft;
     bool direct;
-    unsigned int max_atoms;
+    size_t max_atoms;
     str output;
 
     CLIReader(int argc, char *argv[]);

@@ -12,14 +12,14 @@ typedef chrono::steady_clock timer;
 void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 
     // Load all data into contiguous array
-    int nsteps = data.check_steps();
-    int natoms = std::min(cli.max_atoms, static_cast<unsigned int>(data.natoms));
+    size_t nsteps = data.check_steps();
+    size_t natoms = std::min(cli.max_atoms, data.natoms);
 
     A3 velocities(nsteps, natoms, 3);
 
     data.load(velocities, natoms);
 
-    printf("Found %d time steps\n", nsteps);
+    printf("Found %zu time steps\n", nsteps);
     fflush(stdout);
 
     if (cli.args.verbose) std::cout << "Computing autocorrelation ... " << std::flush;
@@ -50,28 +50,29 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
 void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
     // Get actual size from null readout
-    int nsteps =  data.check_steps();
+    size_t nsteps = data.check_steps();
 
-    printf("Found %d time steps\n", nsteps);
+    printf("Found %zu time steps\n", nsteps);
     fflush(stdout);
 
-    int array_size = cli.mem*pow(2,20)/(4*sizeof(double));
-    int natoms = std::min(cli.max_atoms, static_cast<unsigned int>(data.natoms));
-    int chunk = std::min(natoms, array_size / (nsteps*3));
-    int nchunks = std::ceil(static_cast<double>(natoms) / chunk);
+    size_t array_size = cli.mem*pow(2,20)/(4*sizeof(double));
+    size_t natoms = std::min(cli.max_atoms, data.natoms);
+    size_t chunk = std::min(natoms, array_size / (nsteps*3));
+    size_t nchunks = std::ceil(static_cast<double>(natoms) / chunk);
 
     // One array for all chunks. Use ffts - need 4x space (for now)
-    std::vector<int> primes = fft::find_ideal_size(2*nsteps, 2, 1); // For now, only base 2
-    int fft_size = std::accumulate(primes.begin(), primes.end(), 1.0, std::multiplies<int>());
+    std::vector<uns> primes = fft::find_ideal_size(2*nsteps, 2); // For now, only base 2
+    size_t fft_size = std::accumulate(
+        primes.begin(), primes.end(), static_cast<size_t>(1), std::multiplies<size_t>());
 
     A3 velocities(2*fft_size, chunk, 3);
     A3 Z_sum(nsteps, 1, 1);
 
     if (cli.args.verbose) std::cout << "Start chunk loading for "
         << nchunks << " chunks" << std::endl;
-    for (int n=0; n<nchunks; n++) {
+    for (size_t n=0; n<nchunks; n++) {
 
-        int chunk_size = chunk;
+        size_t chunk_size = chunk;
         if (n == nchunks-1) {
             chunk_size = natoms-n*chunk;
             // velocities.resize_contiguous(2*fft_size, chunk_size, 3);
@@ -102,7 +103,7 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
 
     // Divide over natoms
-    for (int i = 0; i < Z_sum.h; i++) {
+    for (size_t i = 0; i < Z_sum.h; i++) {
         Z_sum[i] = Z_sum[i] / (natoms * 3 * (nsteps-i));
     }
 

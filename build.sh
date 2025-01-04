@@ -1,25 +1,29 @@
 compile=true
-build_dev=true
-test=true
+dev=true
 oflags=false
+test=true
 
 if ${compile}; then
 
-    mkdir -p build
+    if ! [ -d "build" ]; then
+        mkdir build
+    else
+        rm build/CmakeCache.txt
+    fi 
+
     cd build
 
-    if ${build_dev}; then
+    if ${dev}; then
         cmake \
             -D CMAKE_BUILD_TYPE=DEBUG \
             -D BUILD_TESTING=TRUE \
-            -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" \
+            -D DEV=TRUE \
             ..
-            # -D PARALLEL=TRUE \
     elif ${oflags}; then
-        cmake -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" \
-              -D OPT=TRUE \
-              ..
-    else
+        cmake -D OPT=TRUE ..
+    fi
+
+    if [[ $OSTYPE != "linux-gnu"* ]]; then
         cmake -D CMAKE_CXX_COMPILER="/opt/homebrew/bin/g++-14" ..
     fi
 

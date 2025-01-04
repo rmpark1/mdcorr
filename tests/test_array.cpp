@@ -6,28 +6,28 @@
 typedef array::Arr3<int> A3;
 typedef std::string str;
 
-int check_overlap(int h, int w, int d) {
+int check_overlap(size_t h, size_t w, size_t d) {
 
     A3 arr(h, w, d);
-    for (int i=0; i < arr.h; i++) {
-        for (int j=0; j < arr.w; j++) {
-            for (int k=0; k < arr.d; k++) {
+    for (size_t i=0; i < arr.h; i++) {
+        for (size_t j=0; j < arr.w; j++) {
+            for (size_t k=0; k < arr.d; k++) {
                 arr(i,j,k) = 0.0;
             }
         }
     }
 
-    for (int i=0; i < arr.h; i++) {
-        for (int j=0; j < arr.d; j++) {
-            for (int k=0; k < arr.w; k++) {
+    for (size_t i=0; i < arr.h; i++) {
+        for (size_t j=0; j < arr.d; j++) {
+            for (size_t k=0; k < arr.w; k++) {
                 arr(i,k,j) = arr(i,k,j) + 1.0;
             }
         }
     }
 
-    for (int i=0; i < arr.d; i++) {
-        for (int j=0; j < arr.w; j++) {
-            for (int k=0; k < arr.h; k++) {
+    for (size_t i=0; i < arr.d; i++) {
+        for (size_t j=0; j < arr.w; j++) {
+            for (size_t k=0; k < arr.h; k++) {
                 if (arr(k,j,i) != 1.0) return 1;
             }
         }
@@ -65,13 +65,13 @@ int test_fill() {
     return 0;
 }
 
-int test_resize_change(A3 &arr, int x, int y, int z) {
-    int x0 = arr.h;
-    int y0 = arr.w;
-    int z0 = arr.d;
-    for (int i=0; i < arr.h; i++) {
-        for (int j=0; j < arr.w; j++) {
-            for (int k=0; k < arr.d; k++) {
+int test_resize_change(A3 &arr, size_t x, size_t y, size_t z) {
+    size_t x0 = arr.h;
+    size_t y0 = arr.w;
+    size_t z0 = arr.d;
+    for (size_t i=0; i < arr.h; i++) {
+        for (size_t j=0; j < arr.w; j++) {
+            for (size_t k=0; k < arr.d; k++) {
                 str s = std::to_string(i) + std::to_string(j) + std::to_string(k);
                 arr(i,j,k) = (double)std::stoi(s);
             }
@@ -80,9 +80,9 @@ int test_resize_change(A3 &arr, int x, int y, int z) {
 
     arr.resize_contiguous(x, y, z);
 
-    for (int i=0; i < std::min(x0, x); i++) {
-        for (int j=0; j < std::min(y0, y); j++) {
-            for (int k=0; k < std::min(z0, z); k++) {
+    for (size_t i=0; i < std::min(x0, x); i++) {
+        for (size_t j=0; j < std::min(y0, y); j++) {
+            for (size_t k=0; k < std::min(z0, z); k++) {
                 str s = std::to_string(i) + std::to_string(j) + std::to_string(k);
                 if (arr(i,j,k) != (double)std::stoi(s)) return 1;
             }

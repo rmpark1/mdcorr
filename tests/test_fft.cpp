@@ -7,22 +7,25 @@
 
 namespace rv = std::ranges::views;
 
-bool is_decomposed_by(int N, std::vector<int> primes) {
+bool is_decomposed_by(size_t N, std::vector<uns> primes) {
     // Check if this is the correct prime factorization.
     double n = (double) N;
-    for (int p : primes) {
+    std::cout << n << std::endl;
+    for (uns p : primes) {
         n = n / p;
     }
+    std::cout << n << std::endl;
     return n == 1.0;
 }
 
 int test_find_size() {
 
-    std::vector<int> sizes{1, 20, 13, 100, 1000000};
-    for (int size : sizes) {
-        std::vector<int> primes = fft::find_ideal_size(size);
-        int mult = std::accumulate(primes.begin(), primes.end(), 1, std::multiplies<int>());
-        // std::cout << mult << std::endl;
+    std::vector<size_t> sizes{1, 20, 13, 100, 10000000000};
+    for (size_t size : sizes) {
+        std::vector<uns> primes = fft::find_ideal_size(size);
+
+        size_t mult = std::accumulate(
+            primes.begin(), primes.end(), static_cast<size_t>(1), std::multiplies<size_t>());
         if (!is_decomposed_by(mult, primes)) return 1;
     }
     return 0;

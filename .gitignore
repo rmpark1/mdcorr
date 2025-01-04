@@ -10,5 +10,13 @@ snips.cpp
 *.json
 *.bbl
 *.blg
+*.aux
+*latexmk
+*fls
+documentation/*.log
+documentation/*.out
+documentation/*.gz
+documentation/*.toc
+
 
 Testing
