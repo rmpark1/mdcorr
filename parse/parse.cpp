@@ -293,13 +293,14 @@ void CLIReader::read_args(int argc, char *argv[]) {
     int remaining = argc - 1;
     str arg, arg_val;
 
-    while (remaining >= 1) {
+    for (int tok=0; tok < argc; tok++) {
+        if (!remaining) break;
         arg = str(argv[argc-remaining]);
         auto match = [&arg](str s1, str s2) {
             return ((str(arg) == s1) | (str(arg)==(s2))); };
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
-        if (match("--direct", "-v")) { direct = 1; remaining -= 1; continue; }
+        if (match("--direct", "-D")) { direct = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
@@ -312,6 +313,10 @@ void CLIReader::read_args(int argc, char *argv[]) {
         if (match("--fft", "-f")) { fft = std::stoi(arg_val); remaining -= 2; }
         if (match("--atoms", "-a")) { max_atoms = std::stoi(arg_val); remaining -= 2; }
         if (match("--output", "-o")) { output = str(arg_val); remaining -= 2; }
+    }
+
+    if (remaining) {
+        throw std::runtime_error(std::format("Command line parsing error: {}", arg));
     }
 }
 
