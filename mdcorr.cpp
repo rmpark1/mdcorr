@@ -73,10 +73,8 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
     for (size_t n=0; n<nchunks; n++) {
 
         size_t chunk_size = chunk;
-        if (n == nchunks-1) {
-            chunk_size = natoms-n*chunk;
-            // velocities.resize_contiguous(2*fft_size, chunk_size, 3);
-        }
+
+        if (n == nchunks-1) chunk_size = natoms-n*chunk;
 
         const auto start = timer::now();
 

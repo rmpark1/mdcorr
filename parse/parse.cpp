@@ -238,7 +238,6 @@ size_t LammpsReader::check_steps() {
         for (size_t i=0; i < natoms; i++) { std::getline(file_handle, line); }
         
         std::getline(file_handle, line);
-        std::getline(file_handle, line);
 
         nsteps_found++;
 
