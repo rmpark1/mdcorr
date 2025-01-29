@@ -27,7 +27,7 @@ void complex_fft(Iterator arr, size_t size, int rev=1, uns max_prime=7);
  * than largetst prime. Returns the prime decomposition
  */
 std::vector<uns> find_ideal_size(size_t N, uns largest_prime=7);
-std::vector<uns> get_prime_decomposion(size_t n);
+std::vector<uns> get_prime_decomposion(size_t n, uns largeset_prime);
 
 template<class Iterator>
 void reorder(Iterator arr, std::vector<uns> &primes);

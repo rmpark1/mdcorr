@@ -93,29 +93,23 @@ std::vector<uns> find_ideal_size(size_t N, uns largest_prime) {
     if (N == 0) return std::vector<uns>();
     if (N <= 3) return std::vector<uns>{ static_cast<uns>(N) };
 
-    bool found = false;
     size_t n = N;
 
-    uns max_prime;
     std::vector<uns> primes;
     while (true) {
         // Find prime decomposition
-        primes = get_prime_decomposion(n);
-        max_prime = 0;
-        // Find max and sum.
-        std::for_each(primes.begin(), primes.end(),
-            [&max_prime](uns p) { max_prime = fmax(p, max_prime); });
-        found = max_prime <= largest_prime;
-
-        if (found) break;
-
+        primes = get_prime_decomposion(n, largest_prime);
+        if (primes.size() > 0) break;
         // Try next
         n++;
     }
     return primes;
 }
 
-std::vector<uns> get_prime_decomposion(size_t n) {
+/* Get the prime decomposition up to some largest possible prime.
+ * If it is not decomposable by that prime, return the empy set
+ */
+std::vector<uns> get_prime_decomposion(size_t n, uns largest_prime) {
 
     std::vector<uns> factors;
 
@@ -129,15 +123,14 @@ std::vector<uns> get_prime_decomposion(size_t n) {
         n = n / 2;
     }
 
-
-    for (size_t i = 3; i <= sqrt(n); i=i+2) {
+    for (size_t i = 3; i <= largest_prime; i=i+2) {
         while (n % i == 0) {
             factors.push_back(i);
             n = n/i;
         }
     }
 
-    if (n > 2) factors.push_back(n);
+    if (n > 1) return std::vector<uns>();
 
     return factors;
 }

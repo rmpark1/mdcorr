@@ -18,6 +18,7 @@ bool is_decomposed_by(size_t N, std::vector<uns> primes) {
     return n == 1.0;
 }
 
+
 int test_find_size() {
 
     std::vector<size_t> sizes{1, 20, 13, 100, 10000000000};
@@ -96,13 +97,27 @@ int test_base_fft() {
     return 0;
 }
 
+int test_get_prime_decomposition() {
+
+    size_t N = 786433;
+    std::vector<uns> v= fft::find_ideal_size(N, 2);
+
+    for (size_t j = 0; j < v.size(); j++) {
+        std::cout << v[j] << std::endl;
+    }
+    std::cout << v.size() << std::endl;
+
+    return 0;
+}
+
 int main(void) {
 
     int status = 0;
 
-    if (test_find_size()) status = 1;
-    if (test_s_access()) status = 2;
-    if (test_base_fft()) status = 3;
+    // if (test_find_size()) status = 1;
+    // if (test_s_access()) status = 2;
+    // if (test_base_fft()) status = 3;
+    if (test_get_prime_decomposition()) status = 4;
 
     std::cout << "END MAIN\nSTATUS: " << status << std::endl;
     return status;
