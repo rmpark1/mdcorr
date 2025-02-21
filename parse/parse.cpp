@@ -80,23 +80,27 @@ void LammpsReader::build_col_map(std::vector<str> line) {
     if (line[6] != "id") {
         throw std::runtime_error("atom id must be first attribute in dump file");
     }
-
-    std::map<str,int> ordering{
-        {"vx", 0}, {"vy", 1}, {"vz", 2},
-        {"fx", 3}, {"fy", 4}, {"fz", 5},
-    };
-
     // For now, ignore x,y,z. Choose either vel of force depending on availablilty.
     // Only choose force over velocity if `force`=1.
+
+    // Determine which timeseries is available
+    bool vel_exists = false;
+    bool f_exists = false;
+    for (size_t i=7; i < line.size(); i++) {
+        if (line[i][0] == 'v') vel_exists = true;
+        if (line[i][0] == 'f') f_exists = true;
+    }
+    bool read_v = true;
+    if ((!vel_exists) | (force & f_exists)) {
+        read_v = false;
+    }
+
     for (size_t i=7; i < line.size(); i++) {
         // Only view velocities and forces
-        if ((line[i][0] != 'v') | (line[i][0] != 'f')) continue;
-
-        bool is_force  = line[i].find("f") != str::npos;
-        if ((force) & (is_force)) {
-            col_map.push_back(ordering[line[i]]);
-        } else if (!is_force) {
-            col_map.push_back(ordering[line[i]]);
+        if ((read_v & (line[i][0]=='v')) | ((!read_v) & (line[i][0]=='f'))) {
+            col_map.push_back(1);
+        } else {
+            col_map.push_back(0);
         }
     }
 }
@@ -215,15 +219,14 @@ size_t LammpsReader::load_range(A3 &particle_data, size_t min_atom, size_t max_a
             // Read columns
             file_handle >> id;
             if ((rem) & (id-1 < max_atom) & (id-1 >= min_atom)) {
-                // for (size_t j=0; j < 3; j++) {
-                //     file_handle >> val;
-                //     particle_data(tstep, id-1-min_atom, j) = val;
-                // }
+                uns ax_id = 0;
                 for (size_t j=0; j < col_map.size(); j++) {
                     double val;
                     file_handle >> val;
-                    uns ax_id = col_map[j];
-                    if (ax_id >= 3) particle_data(tstep, id-1-min_atom, ax_id-3) = val;
+                    if (col_map[j]) {
+                        particle_data(tstep, id-1-min_atom, ax_id) = val;
+                        ax_id++;
+                    }
                 }
             }
             std::getline(file_handle, line);

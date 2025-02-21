@@ -55,7 +55,7 @@ class LammpsReader {
 
     str dump_path;
     size_t avg_size;
-    std::vector<uns> col_map;
+    std::vector<bool> col_map;
 
     // Data dimensions
     size_t nspecies;
