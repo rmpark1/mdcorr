@@ -15,7 +15,7 @@ int main(void) {
     }
 
     parse::LammpsSettings ls{
-        "data", str("data/1117dl_short.in"), 0, 1, 10000000, 1
+        "data", str("data/1117dl_short.in"), 0, 1, 10000000, 0, 1
     };
     parse::LammpsReader data(ls);
 

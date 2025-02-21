@@ -16,7 +16,9 @@ const str CLI_DOC = "Usage:\n"
                     "--output, -o        Specify output file name.\n\n"
                     "Flags:\n"
                     "--verbose, -v       Print info.\n"
-                    "--direct, -D        Use direct (no fft) method. Not compatible with mem.\n";
+                    "--direct, -D        Use direct (no fft) method. Not compatible with mem.\n"
+                    "--force, -f         Calculate the force autocorrelation if there is both\n"
+                    "                    force and velocity data available.\n";
 
 str os_sep =
 #ifdef _WIN32
@@ -40,6 +42,7 @@ LammpsReader::LammpsReader(LammpsSettings args) :
         verbose(args.verbose),
         skip(args.skip),
         stride(args.stride),
+        force(args.force),
         timesteps(args.timesteps) {
 
     if (directory.empty()) directory = get_parent(args.input);
@@ -79,12 +82,22 @@ void LammpsReader::build_col_map(std::vector<str> line) {
     }
 
     std::map<str,int> ordering{
-        {"x", 0}, {"y", 1}, {"z", 2},
-        {"vx", 3}, {"vy", 4}, {"vz", 5},
-        {"fx", 6}, {"fy", 7}, {"fz", 8},
+        {"vx", 0}, {"vy", 1}, {"vz", 2},
+        {"fx", 3}, {"fy", 4}, {"fz", 5},
     };
+
+    // For now, ignore x,y,z. Choose either vel of force depending on availablilty.
+    // Only choose force over velocity if `force`=1.
     for (size_t i=7; i < line.size(); i++) {
-        col_map.push_back(ordering[line[i]]);
+        // Only view velocities and forces
+        if ((line[i][0] != 'v') | (line[i][0] != 'f')) continue;
+
+        bool is_force  = line[i].find("f") != str::npos;
+        if ((force) & (is_force)) {
+            col_map.push_back(ordering[line[i]]);
+        } else if (!is_force) {
+            col_map.push_back(ordering[line[i]]);
+        }
     }
 }
 
@@ -202,6 +215,10 @@ size_t LammpsReader::load_range(A3 &particle_data, size_t min_atom, size_t max_a
             // Read columns
             file_handle >> id;
             if ((rem) & (id-1 < max_atom) & (id-1 >= min_atom)) {
+                // for (size_t j=0; j < 3; j++) {
+                //     file_handle >> val;
+                //     particle_data(tstep, id-1-min_atom, j) = val;
+                // }
                 for (size_t j=0; j < col_map.size(); j++) {
                     double val;
                     file_handle >> val;
@@ -275,6 +292,7 @@ CLIReader::CLIReader(int argc, char *argv[]) {
     args.stride = 1;
     args.verbose = 0;
     args.timesteps = -1;
+    args.force = 0;
 
     help = 0;
     fft = 1;
@@ -302,6 +320,7 @@ void CLIReader::read_args(int argc, char *argv[]) {
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
         if (match("--direct", "-D")) { direct = 1; remaining -= 1; continue; }
+        if (match("--force", "-h")) { args.force = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);

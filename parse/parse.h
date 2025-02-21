@@ -34,6 +34,7 @@ struct LammpsSettings {
     size_t skip;
     size_t stride;
     size_t timesteps;
+    bool force;
     bool verbose;
 };
 
@@ -49,6 +50,7 @@ class LammpsReader {
     size_t skip;
     size_t stride; // Stride for this reader
     size_t dump_stride; // Stride for lammps output 
+    bool force;
     size_t timesteps;
 
     str dump_path;
