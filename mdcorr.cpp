@@ -15,9 +15,9 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
     size_t nsteps = data.check_steps();
     size_t natoms = std::min(cli.max_atoms, data.natoms);
 
-    A3 velocities(nsteps, natoms, 3);
+    A3 particle_data(nsteps, natoms, 3);
 
-    data.load(velocities, natoms);
+    data.load(particle_data, natoms);
 
     printf("Found %zu time steps\n", nsteps);
     fflush(stdout);
@@ -27,9 +27,9 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
     const auto start = timer::now();
 
     if (cli.direct) {
-        corr::autocorrelate_direct(velocities); // velocities now hold correlations
+        corr::autocorrelate_direct(particle_data); // particle_data now hold correlations
     } else {
-        corr::autocorrelate(velocities, 1); // velocities now hold correlations
+        corr::autocorrelate(particle_data, 1); // particle_data now hold correlations
     }
 
     const auto finish = timer::now();
@@ -41,7 +41,7 @@ void full_autocorr(parse::CLIReader &cli, parse::LammpsReader &data) {
     // Average
     A3 Z_sum(nsteps, 1, 1);
 
-    corr::average(velocities, Z_sum);
+    corr::average(particle_data, Z_sum);
 
     // Write file
     data.write_array(Z_sum, cli.output);
@@ -65,7 +65,7 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
     size_t fft_size = std::accumulate(
         primes.begin(), primes.end(), static_cast<size_t>(1), std::multiplies<size_t>());
 
-    A3 velocities(2*fft_size, chunk, 3);
+    A3 particle_data(2*fft_size, chunk, 3);
     A3 Z_sum(nsteps, 1, 1);
 
     if (cli.args.verbose) std::cout << "Start chunk loading for "
@@ -78,9 +78,9 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
 
         const auto start = timer::now();
 
-        data.load_range(velocities, n*chunk, n*chunk+chunk_size);
+        data.load_range(particle_data, n*chunk, n*chunk+chunk_size);
 
-        corr::autocorrelate(velocities, 0); // velocities now hold correlations
+        corr::autocorrelate(particle_data, 0); // particle_data now hold correlations
 
         const auto finish = timer::now();
 
@@ -92,10 +92,10 @@ void chunk_autocorr(parse::CLIReader cli, parse::LammpsReader &data) {
         }
 
         // Average
-        corr::reduce(velocities, Z_sum);
+        corr::reduce(particle_data, Z_sum);
 
         if (n < nchunks-1) {
-            velocities.fill_range(0, velocities.h, 0.0);
+            particle_data.fill_range(0, particle_data.h, 0.0);
         }
     }
 

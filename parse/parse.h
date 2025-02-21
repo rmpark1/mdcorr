@@ -68,11 +68,11 @@ class LammpsReader {
     void check_dump();
 
     // Load all the data, careful for large files.
-    size_t load(A3 &velocities, size_t atoms);
+    size_t load(A3 &particle_data, size_t atoms);
     // Load subset of the data
-    size_t load_range(A3 &velocities, size_t min_atom, size_t max_atom);
+    size_t load_range(A3 &particle_data, size_t min_atom, size_t max_atom);
 
-    void load_step(A3 &velocities, size_t step, size_t min_atom=0, size_t max_atom=IINFINITY);
+    void load_step(A3 &particle_data, size_t step, size_t min_atom=0, size_t max_atom=IINFINITY);
     size_t find_step(size_t step);
 
     size_t check_steps();

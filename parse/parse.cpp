@@ -80,7 +80,9 @@ void LammpsReader::build_col_map(std::vector<str> line) {
 
     std::map<str,int> ordering{
         {"x", 0}, {"y", 1}, {"z", 2},
-        {"vx", 3}, {"vy", 4}, {"vz", 5} };
+        {"vx", 3}, {"vy", 4}, {"vz", 5},
+        {"fx", 6}, {"fy", 7}, {"fz", 8},
+    };
     for (size_t i=7; i < line.size(); i++) {
         col_map.push_back(ordering[line[i]]);
     }
@@ -160,13 +162,13 @@ void LammpsReader::check_dump() {
 /**
  * Read all data in a specified directory
  */
-size_t LammpsReader::load(A3 &velocities, size_t atoms) {
+size_t LammpsReader::load(A3 &particle_data, size_t atoms) {
 
     if(verbose) std::cout << "Reading " << dump_path << std::endl;
     const auto start = timer::now();
 
     // Load entire range
-    size_t found = load_range(velocities, 0, atoms);
+    size_t found = load_range(particle_data, 0, atoms);
 
     const auto finish = timer::now();
     if (verbose) std::cout << "Finished reading in "
@@ -174,7 +176,7 @@ size_t LammpsReader::load(A3 &velocities, size_t atoms) {
     return found;
 }
 
-size_t LammpsReader::load_range(A3 &velocities, size_t min_atom, size_t max_atom) {
+size_t LammpsReader::load_range(A3 &particle_data, size_t min_atom, size_t max_atom) {
 
     size_t id;
     str line;
@@ -204,7 +206,7 @@ size_t LammpsReader::load_range(A3 &velocities, size_t min_atom, size_t max_atom
                     double val;
                     file_handle >> val;
                     uns ax_id = col_map[j];
-                    if (ax_id >= 3) velocities(tstep, id-1-min_atom, ax_id-3) = val;
+                    if (ax_id >= 3) particle_data(tstep, id-1-min_atom, ax_id-3) = val;
                 }
             }
             std::getline(file_handle, line);

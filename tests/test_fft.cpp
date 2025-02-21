@@ -99,13 +99,19 @@ int test_base_fft() {
 
 int test_get_prime_decomposition() {
 
-    size_t N = 786433;
+    // size_t N = 786433;
+    size_t N = 656002;
     std::vector<uns> v= fft::find_ideal_size(N, 2);
 
-    for (size_t j = 0; j < v.size(); j++) {
-        std::cout << v[j] << std::endl;
-    }
+    // for (size_t j = 0; j < v.size(); j++) {
+    //     std::cout << v[j] << std::endl;
+    // }
     std::cout << v.size() << std::endl;
+
+    size_t fft_size = std::accumulate(
+        v.begin(), v.end(), static_cast<size_t>(1), std::multiplies<size_t>());
+
+    std::cout << fft_size << std::endl;
 
     return 0;
 }

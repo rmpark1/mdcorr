@@ -19,10 +19,10 @@ int main(void) {
     };
     parse::LammpsReader data(ls);
 
-    A3 velocities(1000, 100, 3);
+    A3 particle_data(1000, 100, 3);
 
-    // data.load_range(velocities)
+    // data.load_range(particle_data)
 
-    // parse::read_step(path, velocities, 2, 0, 100);
+    // parse::read_step(path, particle_data, 2, 0, 100);
     // return 0;
 }
