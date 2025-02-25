@@ -323,7 +323,7 @@ void CLIReader::read_args(int argc, char *argv[]) {
 
         if (match("--verbose", "-v")) { args.verbose = 1; remaining -= 1; continue; }
         if (match("--direct", "-D")) { direct = 1; remaining -= 1; continue; }
-        if (match("--force", "-h")) { args.force = 1; remaining -= 1; continue; }
+        if (match("--force", "-f")) { args.force = 1; remaining -= 1; continue; }
         if (match("--help", "-h")) { help = 1; remaining -= 1; continue; }
 
         arg_val = str(argv[argc-remaining+1]);
