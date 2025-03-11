@@ -247,9 +247,9 @@ size_t LammpsReader::load_range(A3 &particle_data, size_t min_atom, size_t max_a
 
 size_t LammpsReader::check_steps() {
 
-    int file_atoms;
     str line;
     size_t nsteps_found = 0;
+    size_t file_atoms;
 
     std::fstream file_handle(dump_path);
     if (file_handle.fail()) {
