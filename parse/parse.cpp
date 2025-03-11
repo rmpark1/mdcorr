@@ -247,6 +247,7 @@ size_t LammpsReader::load_range(A3 &particle_data, size_t min_atom, size_t max_a
 
 size_t LammpsReader::check_steps() {
 
+    int file_atoms;
     str line;
     size_t nsteps_found = 0;
 
@@ -258,9 +259,11 @@ size_t LammpsReader::check_steps() {
     std::getline(file_handle, line);
     while (!file_handle.eof()) {
 
-        // Skip header
-        for (int i=0; i<8; i++) std::getline(file_handle, line);
-        for (size_t i=0; i < natoms; i++) { std::getline(file_handle, line); }
+        // Get natoms from header
+        for (int i=0; i<2; i++) std::getline(file_handle, line);
+        file_handle >> file_atoms;
+        for (int i=0; i<6; i++) std::getline(file_handle, line);
+        for (size_t i=0; i < file_atoms; i++) { std::getline(file_handle, line); }
         
         std::getline(file_handle, line);
 
